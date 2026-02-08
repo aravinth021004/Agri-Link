@@ -1,0 +1,308 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== ENUMS ====================
+
+enum Role {
+  CUSTOMER
+  FARMER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum SubStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
+  DELETED
+  SOLD_OUT
+}
+
+enum DeliveryOption {
+  HOME_DELIVERY
+  FARM_PICKUP
+  MEETUP_POINT
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PACKED
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+  DISPUTED
+}
+
+// ==================== MODELS ====================
+
+model User {
+  id            String     @id @default(uuid())
+  email         String     @unique
+  phone         String     @unique
+  passwordHash  String
+  fullName      String
+  role          Role       @default(CUSTOMER)
+  profileImage  String?
+  bio           String?
+  location      String?
+  language      String     @default("en")
+  status        UserStatus @default(ACTIVE)
+  emailVerified Boolean    @default(false)
+  phoneVerified Boolean    @default(false)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  // Relations
+  products          Product[]
+  orders            Order[]        @relation("CustomerOrders")
+  farmerOrders      Order[]        @relation("FarmerOrders")
+  subscriptions     Subscription[]
+  likes             Like[]
+  comments          Comment[]
+  ratings           Rating[]       @relation("CustomerRatings")
+  receivedRatings   Rating[]       @relation("FarmerRatings")
+  following         Follow[]       @relation("Follower")
+  followers         Follow[]       @relation("Following")
+  cartItems         CartItem[]
+  sentMessages      Message[]      @relation("SentMessages")
+  receivedMessages  Message[]      @relation("ReceivedMessages")
+  categories        Category[]     @relation("FarmerCategories")
+  otpCodes          OtpCode[]
+
+  @@map("users")
+}
+
+model OtpCode {
+  id        String   @id @default(uuid())
+  userId    String?
+  email     String?
+  phone     String?
+  code      String
+  purpose   String   // VERIFY_EMAIL, VERIFY_PHONE, RESET_PASSWORD
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("otp_codes")
+}
+
+model Subscription {
+  id            String    @id @default(uuid())
+  userId        String
+  planId        String
+  startDate     DateTime
+  endDate       DateTime
+  status        SubStatus @default(ACTIVE)
+  amount        Decimal   @db.Decimal(10, 2)
+  paymentId     String
+  razorpaySubId String?
+  createdAt     DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+model Category {
+  id          String   @id @default(uuid())
+  name        String
+  nameHi      String?  // Hindi translation
+  nameTa      String?  // Tamil translation
+  slug        String   @unique
+  description String?
+  image       String?
+  isGlobal    Boolean  @default(false) // true = platform-wide, false = farmer-specific
+  farmerId    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  farmer   User?     @relation("FarmerCategories", fields: [farmerId], references: [id], onDelete: Cascade)
+  products Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id             String        @id @default(uuid())
+  farmerId       String
+  title          String
+  description    String
+  price          Decimal       @db.Decimal(10, 2)
+  quantity       Int
+  unit           String        // kg, piece, dozen, litre
+  categoryId     String
+  mediaUrls      Json          // Array of image/video URLs
+  deliveryOptions Json         // Array of DeliveryOption enums
+  deliveryRadius Int?          // in kilometers
+  deliveryFee    Decimal?      @db.Decimal(10, 2)
+  status         ProductStatus @default(ACTIVE)
+  viewsCount     Int           @default(0)
+  likesCount     Int           @default(0)
+  commentsCount  Int           @default(0)
+  sharesCount    Int           @default(0)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  farmer    User       @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  category  Category   @relation(fields: [categoryId], references: [id])
+  orders    OrderItem[]
+  likes     Like[]
+  comments  Comment[]
+  cartItems CartItem[]
+
+  @@map("products")
+}
+
+model Like {
+  id        String   @id @default(uuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@map("likes")
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  userId    String
+  productId String
+  parentId  String?
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies Comment[] @relation("CommentReplies")
+
+  @@map("comments")
+}
+
+model Follow {
+  id         String   @id @default(uuid())
+  followerId String
+  farmerId   String
+  createdAt  DateTime @default(now())
+
+  follower User @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  farmer   User @relation("Following", fields: [farmerId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, farmerId])
+  @@map("follows")
+}
+
+model Rating {
+  id         String   @id @default(uuid())
+  customerId String
+  farmerId   String
+  orderId    String
+  rating     Int      // 1-5
+  review     String?
+  createdAt  DateTime @default(now())
+
+  customer User  @relation("CustomerRatings", fields: [customerId], references: [id], onDelete: Cascade)
+  farmer   User  @relation("FarmerRatings", fields: [farmerId], references: [id], onDelete: Cascade)
+  order    Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, orderId])
+  @@map("ratings")
+}
+
+model CartItem {
+  id             String         @id @default(uuid())
+  userId         String
+  productId      String
+  quantity       Int
+  deliveryOption DeliveryOption
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@map("cart_items")
+}
+
+model Order {
+  id              String      @id @default(uuid())
+  orderNumber     String      @unique
+  customerId      String
+  farmerId        String
+  subtotal        Decimal     @db.Decimal(10, 2)
+  deliveryOption  DeliveryOption
+  deliveryFee     Decimal     @db.Decimal(10, 2)
+  totalAmount     Decimal     @db.Decimal(10, 2)
+  deliveryAddress Json?
+  pickupLocation  Json?
+  status          OrderStatus @default(PENDING)
+  paymentId       String
+  razorpayOrderId String?
+  notes           String?
+  deliveryProof   String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  customer  User        @relation("CustomerOrders", fields: [customerId], references: [id], onDelete: Cascade)
+  farmer    User        @relation("FarmerOrders", fields: [farmerId], references: [id], onDelete: Cascade)
+  items     OrderItem[]
+  ratings   Rating[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  productId String
+  quantity  Int
+  unitPrice Decimal @db.Decimal(10, 2)
+  subtotal  Decimal @db.Decimal(10, 2)
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("order_items")
+}
+
+model Message {
+  id         String   @id @default(uuid())
+  senderId   String
+  receiverId String
+  content    String
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  sender   User @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@index([senderId, receiverId])
+  @@map("messages")
+}
