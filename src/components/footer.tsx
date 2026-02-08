@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { Facebook, Twitter, Instagram, Youtube, Mail, Phone, MapPin } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
@@ -14,7 +15,7 @@ export function Footer() {
           {/* Brand */}
           <div>
             <Link href="/" className="flex items-center gap-2 text-white">
-              <span className="text-2xl">🌾</span>
+              <Image src="/logo.png" alt="AgriLink" width={40} height={40} className="w-10 h-10" />
               <span className="text-xl font-bold">AgriLink</span>
             </Link>
             <p className="mt-4 text-sm">

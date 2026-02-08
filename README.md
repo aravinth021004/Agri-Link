@@ -1,36 +1,173 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🌾 AgriLink
 
-## Getting Started
+**Farm Fresh, Direct to You** - A modern platform connecting farmers directly with consumers for fresh produce at fair prices.
 
-First, run the development server:
+![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)
+![Prisma](https://img.shields.io/badge/Prisma-5-2D3748?logo=prisma)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-336791?logo=postgresql)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC?logo=tailwind-css)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## ✨ Features
+
+### For Customers
+- 🛒 Browse and purchase fresh produce directly from farmers
+- 🔍 Advanced search with filters (category, price, location)
+- 💬 Direct messaging with farmers
+- 📦 Order tracking and history
+- ❤️ Wishlist for favorite products
+- 🌐 Multi-language support (English, Hindi, Tamil)
+
+### For Farmers
+- 📊 Comprehensive dashboard with analytics
+- 📝 Easy product management (create, edit, delete)
+- 💰 Subscription plans for selling
+- 📈 Sales tracking and earnings overview
+- 👥 Follower management
+
+### For Admins
+- 👤 User management
+- 📊 Platform analytics
+- 🛡️ Content moderation
+
+## 🚀 Tech Stack
+
+| Category | Technology |
+|----------|------------|
+| Framework | Next.js 16 (App Router) |
+| Language | TypeScript |
+| Styling | Tailwind CSS + shadcn/ui |
+| Database | PostgreSQL |
+| ORM | Prisma 5 |
+| Auth | NextAuth.js |
+| State | Zustand |
+| i18n | next-intl |
+
+## 📋 Prerequisites
+
+- Node.js 18+
+- PostgreSQL 15+
+- npm or yarn
+
+## 🛠️ Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/aravinth021004/Agri-Link.git
+   cd Agri-Link/agrilink
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Configure environment variables**
+   ```bash
+   cp .env.example .env
+   ```
+   Update `.env` with your database URL and secrets.
+
+4. **Set up the database**
+   ```bash
+   npx prisma migrate dev
+   npx prisma db seed
+   ```
+
+5. **Run the development server**
+   ```bash
+   npm run dev
+   ```
+
+6. **Open in browser**
+   ```
+   http://localhost:3000
+   ```
+
+## 📁 Project Structure
+
+```
+agrilink/
+├── prisma/              # Database schema and migrations
+├── public/              # Static assets
+├── messages/            # i18n translation files
+│   ├── en.json          # English
+│   ├── hi.json          # Hindi
+│   └── ta.json          # Tamil
+├── src/
+│   ├── app/             # Next.js App Router pages
+│   │   ├── api/         # API routes
+│   │   ├── (auth)/      # Auth pages (login, signup)
+│   │   ├── feed/        # Product feed
+│   │   ├── cart/        # Shopping cart
+│   │   ├── orders/      # Order management
+│   │   ├── dashboard/   # Farmer dashboard
+│   │   └── admin/       # Admin panel
+│   ├── components/      # Reusable UI components
+│   ├── hooks/           # Custom React hooks
+│   ├── lib/             # Utility functions
+│   ├── stores/          # Zustand stores
+│   └── i18n/            # Internationalization config
+└── package.json
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🔑 Environment Variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```env
+DATABASE_URL="postgresql://user:password@localhost:5432/agrilink"
+NEXTAUTH_SECRET="your-secret-key"
+NEXTAUTH_URL="http://localhost:3000"
+JWT_SECRET="your-jwt-secret"
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# Optional
+STORAGE_MODE="local"       # or "cloudinary"
+OTP_MODE="console"         # or "twilio"
+EMAIL_MODE="console"       # or "smtp"
+```
 
-## Learn More
+## 📱 Pages & Routes
 
-To learn more about Next.js, take a look at the following resources:
+| Route | Description |
+|-------|-------------|
+| `/` | Landing page |
+| `/feed` | Product feed |
+| `/search` | Search products |
+| `/cart` | Shopping cart |
+| `/checkout` | Checkout flow |
+| `/orders` | Order history |
+| `/profile` | User profile |
+| `/settings` | App settings |
+| `/dashboard` | Farmer dashboard |
+| `/admin` | Admin panel |
+| `/messages` | Direct messaging |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🌐 Multi-Language Support
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+AgriLink supports 3 languages:
+- 🇬🇧 **English** (default)
+- 🇮🇳 **Hindi** (हिंदी)
+- 🇮🇳 **Tamil** (தமிழ்)
 
-## Deploy on Vercel
+Change language in Settings → Language.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🤝 Contributing
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+## 👨‍💻 Author
+
+**Aravinth** - [GitHub](https://github.com/aravinth021004)
+
+---
+
+<p align="center">
+  Made with ❤️ for farmers and consumers
+</p>

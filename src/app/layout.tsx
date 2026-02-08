@@ -13,9 +13,13 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "AgriLink - Farm Fresh, Direct to You",
+  title: "AgriLink",
   description: "Connect directly with local farmers. Fresh produce, fair prices, no middlemen.",
   keywords: "farmers, fresh produce, organic, local food, farm to table, agriculture, India",
+  icons: {
+    icon: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export default async function RootLayout({

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -151,9 +152,13 @@ export default function SignupPage() {
       <div className="w-full max-w-md">
         <div className="bg-white rounded-2xl shadow-lg p-8">
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-green-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <span className="text-white font-bold text-3xl">A</span>
-            </div>
+            <Image
+              src="/logo.png"
+              alt="AgriLink"
+              width={80}
+              height={80}
+              className="mx-auto mb-4"
+            />
             <h1 className="text-2xl font-bold text-gray-900">{t('signupTitle')}</h1>
             <p className="text-gray-600 mt-2">{t('signupSubtitle')}</p>
           </div>
