@@ -1,6 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { v4 as uuidv4 } from 'uuid'
+import { v2 as cloudinary } from 'cloudinary'
 
 export interface UploadResult {
   url: string
@@ -9,7 +10,14 @@ export interface UploadResult {
 }
 
 const UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads')
-const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+})
 
 // Ensure upload directory exists
 function ensureUploadDir() {
@@ -35,7 +43,7 @@ async function uploadToLocal(file: File): Promise<UploadResult> {
   const buffer = Buffer.from(bytes)
 
   if (buffer.length > MAX_FILE_SIZE) {
-    throw new Error('File size exceeds 5MB limit')
+    throw new Error('File size exceeds 10MB limit')
   }
 
   const ext = file.name.split('.').pop() || 'jpg'
@@ -54,8 +62,6 @@ async function uploadToLocal(file: File): Promise<UploadResult> {
 }
 
 async function uploadToCloudinary(file: File): Promise<UploadResult> {
-  // Cloudinary integration for production
-  // This will be implemented when moving to production
   const cloudName = process.env.CLOUDINARY_CLOUD_NAME
   const apiKey = process.env.CLOUDINARY_API_KEY
   const apiSecret = process.env.CLOUDINARY_API_SECRET
@@ -65,10 +71,38 @@ async function uploadToCloudinary(file: File): Promise<UploadResult> {
     return uploadToLocal(file)
   }
 
-  // TODO: Implement Cloudinary upload
-  // For now, fall back to local storage
-  console.log('Cloudinary integration pending. Using local storage.')
-  return uploadToLocal(file)
+  const bytes = await file.arrayBuffer()
+  const buffer = Buffer.from(bytes)
+
+  if (buffer.length > MAX_FILE_SIZE) {
+    throw new Error('File size exceeds 10MB limit')
+  }
+
+  const isVideo = file.type.startsWith('video/')
+  const resourceType = isVideo ? 'video' : 'image'
+
+  // Convert buffer to base64 data URI
+  const base64 = buffer.toString('base64')
+  const dataUri = `data:${file.type};base64,${base64}`
+
+  try {
+    const result = await cloudinary.uploader.upload(dataUri, {
+      folder: 'agrilink',
+      resource_type: resourceType,
+      transformation: isVideo ? undefined : [
+        { quality: 'auto', fetch_format: 'auto' }
+      ],
+    })
+
+    return {
+      url: result.secure_url,
+      publicId: result.public_id,
+      type: isVideo ? 'video' : 'image',
+    }
+  } catch (error) {
+    console.error('Cloudinary upload failed:', error)
+    throw new Error('Failed to upload to Cloudinary')
+  }
 }
 
 export async function deleteFile(publicId: string): Promise<void> {
@@ -89,8 +123,11 @@ async function deleteFromLocal(filename: string): Promise<void> {
 }
 
 async function deleteFromCloudinary(publicId: string): Promise<void> {
-  // TODO: Implement Cloudinary delete
-  console.log('Cloudinary delete pending for:', publicId)
+  try {
+    await cloudinary.uploader.destroy(publicId)
+  } catch (error) {
+    console.error('Cloudinary delete failed:', error)
+  }
 }
 
 export function getFileUrl(url: string): string {
