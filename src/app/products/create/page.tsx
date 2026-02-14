@@ -7,6 +7,7 @@ import Image from 'next/image'
 import { Upload, X, Plus, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { useGlobalToast } from '@/components/toast-provider'
 
 interface Category {
   id: string
@@ -17,6 +18,7 @@ interface Category {
 export default function CreateProductPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const { showToast } = useGlobalToast()
   const [categories, setCategories] = useState<Category[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [images, setImages] = useState<string[]>([])
@@ -73,9 +75,15 @@ export default function CreateProductPage() {
         body: formData,
       })
       const data = await response.json()
-      
-      if (data.urls) {
-        setImages((prev) => [...prev, ...data.urls].slice(0, 5))
+
+      if (!response.ok) {
+        showToast(data.error || 'Upload failed', 'error')
+        return
+      }
+
+      if (data.uploads?.length) {
+        const urls = data.uploads.map((u: { url: string }) => u.url)
+        setImages((prev) => [...prev, ...urls].slice(0, 5))
       }
     } catch (error) {
       console.error('Upload failed:', error)
@@ -136,7 +144,7 @@ export default function CreateProductPage() {
         router.push(`/products/${data.id}`)
       } else {
         const error = await response.json()
-        alert(error.error || 'Failed to create product')
+        showToast(error.error || 'Failed to create product', 'error')
       }
     } catch (error) {
       console.error('Failed to create product:', error)

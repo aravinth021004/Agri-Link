@@ -8,6 +8,7 @@ import Image from 'next/image'
 import { ArrowLeft, Package, MapPin, Phone, Star, Loader2, CheckCircle, Clock, Truck, XCircle } from 'lucide-react'
 import { formatPrice, formatDate } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { useGlobalToast } from '@/components/toast-provider'
 
 interface OrderDetail {
   id: string
@@ -53,6 +54,7 @@ export default function OrderDetailPage() {
   const params = useParams()
   const router = useRouter()
   const { data: session, status: authStatus } = useSession()
+  const { showToast } = useGlobalToast()
   const [order, setOrder] = useState<OrderDetail | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [showRating, setShowRating] = useState(false)
@@ -95,7 +97,7 @@ export default function OrderDetailPage() {
         }),
       })
       setShowRating(false)
-      alert('Thanks for your feedback!')
+      showToast('Thanks for your feedback!', 'success')
     } catch (error) {
       console.error('Failed to submit rating:', error)
     } finally {

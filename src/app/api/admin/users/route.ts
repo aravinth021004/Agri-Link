@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// PUT update user status (admin only)
+// PUT update user status or role (admin only)
 export async function PUT(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -100,38 +100,54 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { userId, status } = body
+    const { userId, status, role } = body
 
-    if (!userId || !status) {
+    if (!userId || (!status && !role)) {
       return NextResponse.json(
-        { error: 'User ID and status are required' },
+        { error: 'User ID and status or role are required' },
         { status: 400 }
       )
     }
 
-    if (!['ACTIVE', 'SUSPENDED'].includes(status)) {
-      return NextResponse.json(
-        { error: 'Invalid status' },
-        { status: 400 }
-      )
+    const updateData: Record<string, string> = {}
+
+    if (status) {
+      if (!['ACTIVE', 'SUSPENDED'].includes(status)) {
+        return NextResponse.json(
+          { error: 'Invalid status' },
+          { status: 400 }
+        )
+      }
+      updateData.status = status
+    }
+
+    if (role) {
+      if (!['CUSTOMER', 'FARMER', 'ADMIN'].includes(role)) {
+        return NextResponse.json(
+          { error: 'Invalid role' },
+          { status: 400 }
+        )
+      }
+      updateData.role = role
     }
 
     const user = await prisma.user.update({
       where: { id: userId },
-      data: { status },
+      data: updateData,
       select: {
         id: true,
         fullName: true,
         email: true,
         status: true,
+        role: true,
       },
     })
 
-    console.log(`👤 Admin ${session.user.fullName} changed user ${user.fullName} status to ${status}`)
+    console.log(`👤 Admin ${session.user.fullName} updated user ${user.fullName}: ${JSON.stringify(updateData)}`)
 
     return NextResponse.json(user)
   } catch (error) {
-    console.error('Update user status error:', error)
+    console.error('Update user error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

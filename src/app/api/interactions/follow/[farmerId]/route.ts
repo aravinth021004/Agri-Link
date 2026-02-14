@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import prisma from '@/lib/prisma'
 import { authOptions } from '@/lib/auth'
+import { createNotification } from '@/lib/notifications'
 
 interface Params {
   params: Promise<{ farmerId: string }>
@@ -75,6 +76,14 @@ export async function POST(request: NextRequest, { params }: Params) {
 
       const followerCount = await prisma.follow.count({
         where: { farmerId },
+      })
+
+      createNotification({
+        userId: farmerId,
+        type: 'NEW_FOLLOWER',
+        title: 'New Follower',
+        message: `${session.user.name || 'Someone'} started following you`,
+        link: `/farmers/${session.user.id}`,
       })
 
       return NextResponse.json({

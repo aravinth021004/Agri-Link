@@ -142,14 +142,13 @@ export default function FeedPage() {
     }
 
     try {
-      const deliveryOptions = product.mediaUrls as unknown as string[] || ['HOME_DELIVERY']
       await fetch('/api/cart', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           productId: product.id,
           quantity: 1,
-          deliveryOption: deliveryOptions[0] || 'HOME_DELIVERY',
+          deliveryOption: 'HOME_DELIVERY',
         }),
       })
     } catch (error) {

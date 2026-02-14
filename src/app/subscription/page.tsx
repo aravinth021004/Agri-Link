@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Crown, Check, Loader2, Calendar, AlertCircle } from 'lucide-react'
 import { formatPrice, formatDate } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { useGlobalToast } from '@/components/toast-provider'
 
 interface Plan {
   id: string
@@ -28,6 +29,7 @@ interface Subscription {
 export default function SubscriptionPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const { showToast } = useGlobalToast()
   const [plans, setPlans] = useState<Plan[]>([])
   const [currentSubscription, setCurrentSubscription] = useState<Subscription | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -100,10 +102,10 @@ export default function SubscriptionPage() {
 
       if (subscribeRes.ok) {
         fetchData()
-        alert('Subscription activated! You can now sell products.')
+        showToast('Subscription activated! You can now sell products.', 'success')
       } else {
         const error = await subscribeRes.json()
-        alert(error.error || 'Subscription failed')
+        showToast(error.error || 'Subscription failed', 'error')
       }
     } catch (error) {
       console.error('Subscription failed:', error)

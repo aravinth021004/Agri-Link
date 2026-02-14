@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json({ messages })
     } else {
-      // Get all conversations (latest message per user)
+      // Get all conversations - optimized to reduce N+1 queries
       const sentMessages = await prisma.message.findMany({
         where: { senderId: session.user.id },
         select: { receiverId: true },
@@ -65,48 +65,65 @@ export async function GET(request: NextRequest) {
         distinct: ['senderId'],
       })
 
-      const userIds = new Set([
+      const userIds = Array.from(new Set([
         ...sentMessages.map(m => m.receiverId),
         ...receivedMessages.map(m => m.senderId),
-      ])
+      ]))
 
-      const conversations = await Promise.all(
-        Array.from(userIds).map(async (userId) => {
-          const lastMessage = await prisma.message.findFirst({
-            where: {
-              OR: [
-                { senderId: session.user.id, receiverId: userId },
-                { senderId: userId, receiverId: session.user.id },
-              ],
-            },
-            orderBy: { createdAt: 'desc' },
-          })
+      if (userIds.length === 0) {
+        return NextResponse.json({ conversations: [] })
+      }
 
-          const unreadCount = await prisma.message.count({
-            where: {
-              senderId: userId,
-              receiverId: session.user.id,
-              isRead: false,
-            },
-          })
+      // Batch fetch all users at once
+      const users = await prisma.user.findMany({
+        where: { id: { in: userIds } },
+        select: {
+          id: true,
+          fullName: true,
+          profileImage: true,
+          role: true,
+        },
+      })
+      const userMap = new Map(users.map(u => [u.id, u]))
 
-          const user = await prisma.user.findUnique({
-            where: { id: userId },
-            select: {
-              id: true,
-              fullName: true,
-              profileImage: true,
-              role: true,
-            },
-          })
+      // Batch fetch unread counts per sender
+      const unreadCounts = await prisma.message.groupBy({
+        by: ['senderId'],
+        where: {
+          receiverId: session.user.id,
+          isRead: false,
+          senderId: { in: userIds },
+        },
+        _count: true,
+      })
+      const unreadMap = new Map(unreadCounts.map(u => [u.senderId, u._count]))
 
-          return {
-            user,
-            lastMessage,
-            unreadCount,
-          }
-        })
-      )
+      // Fetch last message per conversation partner in a single batch
+      // We need to get the most recent message for each conversation
+      const allRecentMessages = await prisma.message.findMany({
+        where: {
+          OR: userIds.flatMap(uid => [
+            { senderId: session.user.id, receiverId: uid },
+            { senderId: uid, receiverId: session.user.id },
+          ]),
+        },
+        orderBy: { createdAt: 'desc' },
+      })
+
+      // Group by partner and get latest per partner
+      const lastMessageMap = new Map<string, typeof allRecentMessages[0]>()
+      for (const msg of allRecentMessages) {
+        const partnerId = msg.senderId === session.user.id ? msg.receiverId : msg.senderId
+        if (!lastMessageMap.has(partnerId)) {
+          lastMessageMap.set(partnerId, msg)
+        }
+      }
+
+      const conversations = userIds.map(userId => ({
+        user: userMap.get(userId) || null,
+        lastMessage: lastMessageMap.get(userId) || null,
+        unreadCount: unreadMap.get(userId) || 0,
+      })).filter(c => c.user != null)
 
       // Sort by last message time
       conversations.sort((a, b) => 

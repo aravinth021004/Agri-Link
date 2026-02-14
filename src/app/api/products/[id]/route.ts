@@ -14,8 +14,8 @@ export async function GET(request: NextRequest, { params }: Params) {
     const { id } = await params
     const session = await getServerSession(authOptions)
 
-    const product = await prisma.product.findUnique({
-      where: { id },
+    const product = await prisma.product.findFirst({
+      where: { id, status: { not: 'DELETED' } },
       include: {
         farmer: {
           select: {

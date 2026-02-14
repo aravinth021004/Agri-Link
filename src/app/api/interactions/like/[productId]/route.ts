@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import prisma from '@/lib/prisma'
 import { authOptions } from '@/lib/auth'
+import { createNotification } from '@/lib/notifications'
 
 interface Params {
   params: Promise<{ productId: string }>
@@ -48,14 +49,14 @@ export async function POST(request: NextRequest, { params }: Params) {
         where: { id: existingLike.id },
       })
 
-      await prisma.product.update({
+      const updated = await prisma.product.update({
         where: { id: productId },
         data: { likesCount: { decrement: 1 } },
       })
 
       return NextResponse.json({
         liked: false,
-        likesCount: product.likesCount - 1,
+        likesCount: Math.max(0, updated.likesCount),
       })
     } else {
       // Like
@@ -66,14 +67,25 @@ export async function POST(request: NextRequest, { params }: Params) {
         },
       })
 
-      await prisma.product.update({
+      const updated = await prisma.product.update({
         where: { id: productId },
         data: { likesCount: { increment: 1 } },
       })
 
+      // Notify product owner about the like
+      if (product.farmerId !== session.user.id) {
+        createNotification({
+          userId: product.farmerId,
+          type: 'NEW_LIKE',
+          title: 'New like on your product',
+          message: `${session.user.fullName} liked your product "${product.title}"`,
+          link: `/products/${productId}`,
+        })
+      }
+
       return NextResponse.json({
         liked: true,
-        likesCount: product.likesCount + 1,
+        likesCount: updated.likesCount,
       })
     }
   } catch (error) {

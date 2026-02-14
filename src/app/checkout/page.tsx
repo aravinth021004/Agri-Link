@@ -7,6 +7,7 @@ import { formatPrice } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Loader2, CheckCircle, MapPin } from 'lucide-react'
+import { useGlobalToast } from '@/components/toast-provider'
 
 interface CartGroup {
   farmer: {
@@ -30,6 +31,7 @@ interface CartGroup {
 export default function CheckoutPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const { showToast } = useGlobalToast()
   const [cartGroups, setCartGroups] = useState<CartGroup[]>([])
   const [grandTotal, setGrandTotal] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
@@ -49,8 +51,8 @@ export default function CheckoutPage() {
     try {
       const response = await fetch('/api/cart')
       const data = await response.json()
-      setCartGroups(data.farmerGroups || [])
-      setGrandTotal(data.grandTotal || 0)
+      setCartGroups(data.farmerCarts || [])
+      setGrandTotal(data.summary?.grandTotal || 0)
     } catch (error) {
       console.error('Failed to fetch cart:', error)
     } finally {
@@ -73,7 +75,7 @@ export default function CheckoutPage() {
     )
     
     if (hasHomeDelivery && (!address.street || !address.city || !address.state || !address.pincode)) {
-      alert('Please fill in your delivery address')
+      showToast('Please fill in your delivery address', 'warning')
       return
     }
 
@@ -118,11 +120,11 @@ export default function CheckoutPage() {
         setOrderIds(orderData.orders.map((o: { id: string }) => o.id))
         setOrderPlaced(true)
       } else {
-        alert(orderData.error || 'Failed to place order')
+        showToast(orderData.error || 'Failed to place order', 'error')
       }
     } catch (error) {
       console.error('Checkout failed:', error)
-      alert('Checkout failed. Please try again.')
+      showToast('Checkout failed. Please try again.', 'error')
     } finally {
       setIsProcessing(false)
     }

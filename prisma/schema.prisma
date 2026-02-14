@@ -54,6 +54,29 @@ enum OrderStatus {
   DISPUTED
 }
 
+enum NotificationType {
+  ORDER_UPDATE
+  NEW_FOLLOWER
+  NEW_LIKE
+  NEW_COMMENT
+  SUBSCRIPTION_EXPIRY
+  NEW_MESSAGE
+  SYSTEM
+}
+
+enum ReportTargetType {
+  PRODUCT
+  USER
+  COMMENT
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  DISMISSED
+  ACTION_TAKEN
+}
+
 // ==================== MODELS ====================
 
 model User {
@@ -89,6 +112,9 @@ model User {
   receivedMessages  Message[]      @relation("ReceivedMessages")
   categories        Category[]     @relation("FarmerCategories")
   otpCodes          OtpCode[]
+  notifications     Notification[]
+  reports           Report[]       @relation("ReporterReports")
+  wishlistItems     WishlistItem[]
 
   @@map("users")
 }
@@ -172,7 +198,11 @@ model Product {
   likes     Like[]
   comments  Comment[]
   cartItems CartItem[]
+  wishlistItems WishlistItem[]
 
+  @@index([farmerId])
+  @@index([categoryId])
+  @@index([status])
   @@map("products")
 }
 
@@ -276,6 +306,9 @@ model Order {
   items     OrderItem[]
   ratings   Rating[]
 
+  @@index([customerId])
+  @@index([farmerId])
+  @@index([status])
   @@map("orders")
 }
 
@@ -306,4 +339,52 @@ model Message {
 
   @@index([senderId, receiverId])
   @@map("messages")
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  link      String?
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@map("notifications")
+}
+
+model Report {
+  id          String           @id @default(uuid())
+  reporterId  String
+  targetType  ReportTargetType
+  targetId    String
+  reason      String
+  description String?
+  status      ReportStatus     @default(PENDING)
+  resolvedBy  String?
+  resolvedAt  DateTime?
+  createdAt   DateTime         @default(now())
+
+  reporter User @relation("ReporterReports", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([targetType, targetId])
+  @@map("reports")
+}
+
+model WishlistItem {
+  id        String   @id @default(uuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@map("wishlist_items")
 }

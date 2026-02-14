@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import prisma from '@/lib/prisma'
 import { authOptions } from '@/lib/auth'
 import { commentSchema } from '@/lib/validations'
+import { createNotification } from '@/lib/notifications'
 
 // GET comments for a product
 export async function GET(request: NextRequest) {
@@ -160,6 +161,17 @@ export async function POST(request: NextRequest) {
       data: { commentsCount: { increment: 1 } },
     })
 
+    // Notify product owner about the comment
+    if (product.farmerId !== session.user.id) {
+      createNotification({
+        userId: product.farmerId,
+        type: 'NEW_COMMENT',
+        title: 'New comment on your product',
+        message: `${session.user.fullName} commented on "${product.title}"`,
+        link: `/products/${productId}`,
+      })
+    }
+
     return NextResponse.json(comment, { status: 201 })
   } catch (error) {
     console.error('Create comment error:', error)
@@ -283,6 +295,11 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
+    // Count replies to decrement properly
+    const replyCount = await prisma.comment.count({
+      where: { parentId: commentId },
+    })
+
     // Delete comment and its replies
     await prisma.comment.deleteMany({
       where: {
@@ -293,10 +310,10 @@ export async function DELETE(request: NextRequest) {
       },
     })
 
-    // Update comment count
+    // Update comment count (parent + replies)
     await prisma.product.update({
       where: { id: comment.productId },
-      data: { commentsCount: { decrement: 1 } },
+      data: { commentsCount: { decrement: 1 + replyCount } },
     })
 
     return NextResponse.json({ message: 'Comment deleted' })

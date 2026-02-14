@@ -51,8 +51,8 @@ export default function CartPage() {
     try {
       const response = await fetch('/api/cart')
       const data = await response.json()
-      setCartGroups(data.farmerGroups || [])
-      setGrandTotal(data.grandTotal || 0)
+      setCartGroups(data.farmerCarts || [])
+      setGrandTotal(data.summary?.grandTotal || 0)
     } catch (error) {
       console.error('Failed to fetch cart:', error)
     } finally {

@@ -7,6 +7,7 @@ import Image from 'next/image'
 import { Upload, X, Plus, Loader2, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { useGlobalToast } from '@/components/toast-provider'
 
 interface Category {
   id: string
@@ -32,6 +33,7 @@ export default function EditProductPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const params = useParams()
+  const { showToast } = useGlobalToast()
   const [categories, setCategories] = useState<Category[]>([])
   const [product, setProduct] = useState<Product | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -114,9 +116,15 @@ export default function EditProductPage() {
         body: formData,
       })
       const data = await response.json()
-      
-      if (data.urls) {
-        setImages((prev) => [...prev, ...data.urls].slice(0, 5))
+
+      if (!response.ok) {
+        showToast(data.error || 'Upload failed', 'error')
+        return
+      }
+
+      if (data.uploads?.length) {
+        const urls = data.uploads.map((u: { url: string }) => u.url)
+        setImages((prev) => [...prev, ...urls].slice(0, 5))
       }
     } catch (error) {
       console.error('Upload failed:', error)
@@ -176,7 +184,7 @@ export default function EditProductPage() {
         router.push(`/products/${params.id}`)
       } else {
         const error = await response.json()
-        alert(error.error || 'Failed to update product')
+        showToast(error.error || 'Failed to update product', 'error')
       }
     } catch (error) {
       console.error('Failed to update product:', error)

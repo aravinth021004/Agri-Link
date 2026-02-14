@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import prisma from '@/lib/prisma'
 import { authOptions } from '@/lib/auth'
 import { updateOrderStatusSchema } from '@/lib/validations'
+import { createNotification } from '@/lib/notifications'
 
 interface Params {
   params: Promise<{ id: string }>
@@ -175,10 +176,21 @@ export async function PUT(request: NextRequest, { params }: Params) {
       },
     })
 
-    // Log notification (development mode)
-    console.log('='.repeat(50))
-    console.log(`📦 Order #${order.orderNumber} status updated: ${order.status} → ${status}`)
-    console.log('='.repeat(50))
+    const statusMessages: Record<string, string> = {
+      CONFIRMED: 'Your order has been confirmed by the farmer',
+      PACKED: 'Your order has been packed and is ready for dispatch',
+      OUT_FOR_DELIVERY: 'Your order is out for delivery',
+      DELIVERED: 'Your order has been delivered',
+      CANCELLED: 'Your order has been cancelled',
+    }
+
+    createNotification({
+      userId: order.customerId,
+      type: 'ORDER_UPDATE',
+      title: `Order #${order.orderNumber} ${status.toLowerCase().replace('_', ' ')}`,
+      message: statusMessages[status] || `Order status changed to ${status}`,
+      link: `/orders/${order.id}`,
+    })
 
     return NextResponse.json(updatedOrder)
   } catch (error) {

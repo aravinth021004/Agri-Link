@@ -8,6 +8,7 @@ import { useSession } from 'next-auth/react'
 import { Heart, MessageCircle, Share2, MapPin, ShoppingCart, ChevronLeft, ChevronRight, Send, Loader2 } from 'lucide-react'
 import { formatPrice, formatRelativeTime } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { useGlobalToast } from '@/components/toast-provider'
 
 interface Product {
   id: string
@@ -51,6 +52,7 @@ interface Comment {
 export default function ProductDetailPage() {
   const params = useParams()
   const { data: session } = useSession()
+  const { showToast } = useGlobalToast()
   const [product, setProduct] = useState<Product | null>(null)
   const [comments, setComments] = useState<Comment[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -121,7 +123,7 @@ export default function ProductDetailPage() {
           deliveryOption,
         }),
       })
-      alert('Added to cart!')
+      showToast('Added to cart!', 'success')
     } catch (error) {
       console.error('Failed to add to cart:', error)
     } finally {

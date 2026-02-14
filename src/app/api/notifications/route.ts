@@ -16,54 +16,28 @@ export async function GET(request: NextRequest) {
   const unreadOnly = searchParams.get('unread') === 'true'
 
   try {
-    // For now, we'll create notifications from messages, orders, and follows
-    // In a real app, you'd have a dedicated Notification model
-    
-    const [unreadMessages, recentOrders] = await Promise.all([
-      prisma.message.count({
-        where: {
-          receiverId: session.user.id,
-          isRead: false,
-        },
-      }),
-      prisma.order.findMany({
-        where: {
-          OR: [
-            { customerId: session.user.id },
-            { farmerId: session.user.id },
-          ],
-          createdAt: {
-            gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
-          },
-        },
+    const where: Record<string, unknown> = { userId: session.user.id }
+    if (unreadOnly) {
+      where.read = false
+    }
+
+    const [notifications, unreadCount] = await Promise.all([
+      prisma.notification.findMany({
+        where,
         orderBy: { createdAt: 'desc' },
-        take: 10,
-        include: {
-          customer: { select: { fullName: true } },
-          farmer: { select: { fullName: true } },
+        take: limit,
+      }),
+      prisma.notification.count({
+        where: {
+          userId: session.user.id,
+          read: false,
         },
       }),
     ])
 
-    // Transform orders into notification-like objects
-    const notifications = recentOrders.map((order) => {
-      const isCustomer = order.customerId === session.user.id
-      return {
-        id: order.id,
-        type: 'order',
-        title: isCustomer
-          ? `Order ${order.status.toLowerCase().replace(/_/g, ' ')}`
-          : `New order from ${order.customer.fullName}`,
-        message: `Order #${order.orderNumber}`,
-        createdAt: order.createdAt,
-        read: order.status !== 'PENDING',
-        link: `/orders/${order.id}`,
-      }
-    })
-
     return NextResponse.json({
       notifications,
-      unreadCount: unreadMessages,
+      unreadCount,
     })
   } catch (error) {
     console.error('Failed to fetch notifications:', error)
@@ -80,16 +54,28 @@ export async function PUT(request: NextRequest) {
   }
 
   try {
-    // Mark all messages as read
-    await prisma.message.updateMany({
-      where: {
-        receiverId: session.user.id,
-        isRead: false,
-      },
-      data: {
-        isRead: true,
-      },
-    })
+    const body = await request.json().catch(() => ({}))
+    const { notificationId } = body as { notificationId?: string }
+
+    if (notificationId) {
+      // Mark single notification as read
+      await prisma.notification.updateMany({
+        where: {
+          id: notificationId,
+          userId: session.user.id,
+        },
+        data: { read: true },
+      })
+    } else {
+      // Mark all as read
+      await prisma.notification.updateMany({
+        where: {
+          userId: session.user.id,
+          read: false,
+        },
+        data: { read: true },
+      })
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {

@@ -8,11 +8,13 @@ import { Settings, Bell, Languages, LogOut, Loader2, ChevronRight, Save, Lock } 
 import { Button } from '@/components/ui/button'
 import { useLocale } from '@/hooks/use-locale'
 import { type Locale } from '@/i18n/config'
+import { useGlobalToast } from '@/components/toast-provider'
 
 export default function SettingsPage() {
   const t = useTranslations('settings')
   const { data: session, status } = useSession()
   const router = useRouter()
+  const { showToast } = useGlobalToast()
   const { locales, localeNames, setLocale, getLocale } = useLocale()
   
   const [currentLocale, setCurrentLocale] = useState<Locale>('en')
@@ -48,7 +50,7 @@ export default function SettingsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ language: currentLocale }),
       })
-      alert('Settings saved!')
+      showToast('Settings saved!', 'success')
     } catch (error) {
       console.error('Failed to save settings:', error)
     } finally {

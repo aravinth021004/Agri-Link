@@ -64,8 +64,8 @@ export default function DashboardPage() {
   const fetchDashboardData = useCallback(async () => {
     try {
       const [productsRes, ordersRes, profileRes] = await Promise.all([
-        fetch('/api/products?farmerId=me&limit=10'),
-        fetch('/api/orders?limit=10'),
+        fetch(`/api/products?farmerId=${session?.user?.id}&limit=10`),
+        fetch('/api/orders?role=farmer&limit=10'),
         fetch('/api/users/profile'),
       ])
 
@@ -92,7 +92,7 @@ export default function DashboardPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [session?.user?.id])
 
   useEffect(() => {
     if (status === 'authenticated') {

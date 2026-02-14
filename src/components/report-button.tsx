@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Flag, X, Loader2 } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
+import { useGlobalToast } from '@/components/toast-provider'
 
 interface ReportButtonProps {
   type: 'product' | 'user' | 'comment'
@@ -37,6 +38,7 @@ const reportReasons = {
 
 export function ReportButton({ type, targetId }: ReportButtonProps) {
   const { data: session } = useSession()
+  const { showToast } = useGlobalToast()
   const [isOpen, setIsOpen] = useState(false)
   const [selectedReason, setSelectedReason] = useState('')
   const [details, setDetails] = useState('')
@@ -48,16 +50,29 @@ export function ReportButton({ type, targetId }: ReportButtonProps) {
     
     setIsSubmitting(true)
     try {
-      // In production, this would call an API endpoint
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      console.log('Report submitted:', { type, targetId, reason: selectedReason, details })
-      setIsSubmitted(true)
-      setTimeout(() => {
-        setIsOpen(false)
-        setIsSubmitted(false)
-        setSelectedReason('')
-        setDetails('')
-      }, 2000)
+      const response = await fetch('/api/reports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targetType: type.toUpperCase(),
+          targetId,
+          reason: selectedReason,
+          description: details || undefined,
+        }),
+      })
+      
+      if (response.ok) {
+        setIsSubmitted(true)
+        setTimeout(() => {
+          setIsOpen(false)
+          setIsSubmitted(false)
+          setSelectedReason('')
+          setDetails('')
+        }, 2000)
+      } else {
+        const data = await response.json()
+        showToast(data.error || 'Failed to submit report', 'error')
+      }
     } catch (error) {
       console.error('Failed to submit report:', error)
     } finally {

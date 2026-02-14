@@ -43,11 +43,22 @@ export default function MessagesPage() {
     try {
       const response = await fetch('/api/messages')
       const data = await response.json()
-      setConversations(data.conversations || [])
+      
+      // Map API response format to component's Conversation interface
+      const mappedConversations: Conversation[] = (data.conversations || []).map((conv: { user: { id: string; fullName: string; profileImage: string | null }; lastMessage: { content: string; createdAt: string } | null; unreadCount: number }) => ({
+        partnerId: conv.user?.id || '',
+        partnerName: conv.user?.fullName || '',
+        partnerImage: conv.user?.profileImage || null,
+        lastMessage: conv.lastMessage?.content || '',
+        lastMessageTime: conv.lastMessage?.createdAt || new Date().toISOString(),
+        unreadCount: conv.unreadCount || 0,
+      }))
+      
+      setConversations(mappedConversations)
       
       // If there's a to param, select that conversation or start new
-      if (toUserId && data.conversations) {
-        const existing = data.conversations.find((c: Conversation) => c.partnerId === toUserId)
+      if (toUserId && mappedConversations) {
+        const existing = mappedConversations.find((c: Conversation) => c.partnerId === toUserId)
         if (existing) {
           setSelectedConversation(existing)
           fetchMessages(toUserId)
@@ -76,7 +87,7 @@ export default function MessagesPage() {
 
   const fetchMessages = async (partnerId: string) => {
     try {
-      const response = await fetch(`/api/messages?partnerId=${partnerId}`)
+      const response = await fetch(`/api/messages?userId=${partnerId}`)
       const data = await response.json()
       setMessages(data.messages || [])
     } catch (error) {
