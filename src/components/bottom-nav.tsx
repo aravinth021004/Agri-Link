@@ -19,7 +19,7 @@ export function BottomNav() {
     { href: '/feed', icon: Home, label: t('home') },
     { href: '/search', icon: Search, label: t('search') },
     ...(session?.user?.role === 'FARMER' ? [
-      { href: '/products/create', icon: PlusCircle, label: 'Sell' },
+      { href: '/products/create', icon: PlusCircle, label: t('sell') },
     ] : []),
     { href: '/cart', icon: ShoppingCart, label: t('cart'), badge: cartItemCount },
     { href: session ? '/settings' : '/login', icon: session ? Settings : User, label: session ? t('settings') : t('login') },

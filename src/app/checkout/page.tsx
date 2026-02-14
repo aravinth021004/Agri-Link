@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Loader2, CheckCircle, MapPin } from 'lucide-react'
 import { useGlobalToast } from '@/components/toast-provider'
+import { useTranslations } from 'next-intl'
 
 interface CartGroup {
   farmer: {
@@ -32,6 +33,8 @@ export default function CheckoutPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const { showToast } = useGlobalToast()
+  const t = useTranslations('checkout')
+  const tCart = useTranslations('cart')
   const [cartGroups, setCartGroups] = useState<CartGroup[]>([])
   const [grandTotal, setGrandTotal] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
@@ -75,7 +78,7 @@ export default function CheckoutPage() {
     )
     
     if (hasHomeDelivery && (!address.street || !address.city || !address.state || !address.pincode)) {
-      showToast('Please fill in your delivery address', 'warning')
+      showToast(t('fillAddress'), 'warning')
       return
     }
 
@@ -144,18 +147,18 @@ export default function CheckoutPage() {
         <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
           <CheckCircle className="w-10 h-10 text-green-600" />
         </div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Order Placed Successfully!</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('orderPlaced')}</h1>
         <p className="text-gray-600 mb-6">
           {orderIds.length > 1 
-            ? `${orderIds.length} orders have been created (one per farmer).`
-            : 'Your order has been sent to the farmer.'}
+            ? t('ordersCreated', { count: orderIds.length })
+            : t('orderSentToFarmer')}
         </p>
         <div className="space-y-3">
           <Button onClick={() => router.push('/orders')} className="w-full">
-            View My Orders
+            {t('viewMyOrders')}
           </Button>
           <Button onClick={() => router.push('/feed')} variant="outline" className="w-full">
-            Continue Shopping
+            {t('continueShopping')}
           </Button>
         </div>
       </div>
@@ -173,7 +176,7 @@ export default function CheckoutPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Checkout</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">{t('title')}</h1>
 
       <div className="grid lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
@@ -182,39 +185,39 @@ export default function CheckoutPage() {
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
               <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <MapPin className="w-5 h-5 text-green-600" />
-                Delivery Address
+                {t('deliveryAddress')}
               </h2>
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2">
                   <Input
-                    label="Street Address"
-                    placeholder="House/Flat No., Street, Area"
+                    label={t('street')}
+                    placeholder={t('streetPlaceholder')}
                     value={address.street}
                     onChange={(e) => setAddress({ ...address, street: e.target.value })}
                   />
                 </div>
                 <Input
-                  label="City"
-                  placeholder="City"
+                  label={t('city')}
+                  placeholder={t('city')}
                   value={address.city}
                   onChange={(e) => setAddress({ ...address, city: e.target.value })}
                 />
                 <Input
-                  label="State"
-                  placeholder="State"
+                  label={t('state')}
+                  placeholder={t('state')}
                   value={address.state}
                   onChange={(e) => setAddress({ ...address, state: e.target.value })}
                 />
                 <Input
-                  label="Pincode"
-                  placeholder="6-digit pincode"
+                  label={t('pincode')}
+                  placeholder={t('pincodePlaceholder')}
                   value={address.pincode}
                   onChange={(e) => setAddress({ ...address, pincode: e.target.value })}
                   maxLength={6}
                 />
                 <Input
-                  label="Landmark (Optional)"
-                  placeholder="Near..."
+                  label={t('landmark')}
+                  placeholder={t('landmarkPlaceholder')}
                   value={address.landmark}
                   onChange={(e) => setAddress({ ...address, landmark: e.target.value })}
                 />
@@ -224,7 +227,7 @@ export default function CheckoutPage() {
 
           {/* Order Review */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Order Review</h2>
+            <h2 className="text-lg font-bold text-gray-900 mb-4">{t('orderReview')}</h2>
             <div className="space-y-4">
               {cartGroups.map((group) => (
                 <div key={group.farmer.id} className="border border-gray-100 rounded-lg p-4">
@@ -239,11 +242,11 @@ export default function CheckoutPage() {
                       </div>
                     ))}
                     <div className="flex justify-between text-gray-500 pt-2 border-t border-gray-100">
-                      <span>Delivery</span>
+                      <span>{t('delivery')}</span>
                       <span>{formatPrice(group.deliveryFee)}</span>
                     </div>
                     <div className="flex justify-between font-medium pt-1">
-                      <span>Subtotal</span>
+                      <span>{tCart('subtotal')}</span>
                       <span>{formatPrice(group.subtotal + group.deliveryFee)}</span>
                     </div>
                   </div>
@@ -256,7 +259,7 @@ export default function CheckoutPage() {
         {/* Payment Summary */}
         <div className="lg:col-span-1">
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 sticky top-24">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Payment Summary</h2>
+            <h2 className="text-lg font-bold text-gray-900 mb-4">{t('paymentSummary')}</h2>
             <div className="space-y-3 text-sm">
               {cartGroups.map((group) => (
                 <div key={group.farmer.id} className="flex justify-between">
@@ -266,7 +269,7 @@ export default function CheckoutPage() {
               ))}
               <hr />
               <div className="flex justify-between text-lg font-bold">
-                <span>Total</span>
+                <span>{t('total')}</span>
                 <span className="text-green-600">{formatPrice(grandTotal)}</span>
               </div>
             </div>
@@ -277,11 +280,11 @@ export default function CheckoutPage() {
               onClick={handlePlaceOrder}
               isLoading={isProcessing}
             >
-              {isProcessing ? 'Processing...' : `Pay ${formatPrice(grandTotal)}`}
+              {isProcessing ? t('processing') : `${t('pay')} ${formatPrice(grandTotal)}`}
             </Button>
             
             <p className="text-xs text-gray-400 text-center mt-4">
-              Mock payment - No real charges in development mode
+              {t('mockPaymentNote')}
             </p>
           </div>
         </div>

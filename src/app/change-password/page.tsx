@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Lock, Eye, EyeOff, Loader2, ArrowLeft, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { useTranslations } from 'next-intl'
 
 export default function ChangePasswordPage() {
   const { data: session, status } = useSession()
@@ -23,6 +24,7 @@ export default function ChangePasswordPage() {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isLoading, setIsLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
+  const t = useTranslations('changePassword')
 
   if (status === 'unauthenticated') {
     router.push('/login')
@@ -33,19 +35,19 @@ export default function ChangePasswordPage() {
     const newErrors: Record<string, string> = {}
     
     if (!formData.currentPassword) {
-      newErrors.currentPassword = 'Current password is required'
+      newErrors.currentPassword = t('currentRequired')
     }
     if (!formData.newPassword) {
-      newErrors.newPassword = 'New password is required'
+      newErrors.newPassword = t('newRequired')
     } else if (formData.newPassword.length < 8) {
-      newErrors.newPassword = 'Password must be at least 8 characters'
+      newErrors.newPassword = t('minLength')
     } else if (!/[A-Z]/.test(formData.newPassword)) {
-      newErrors.newPassword = 'Password must contain an uppercase letter'
+      newErrors.newPassword = t('needUppercase')
     } else if (!/[0-9]/.test(formData.newPassword)) {
-      newErrors.newPassword = 'Password must contain a number'
+      newErrors.newPassword = t('needNumber')
     }
     if (formData.newPassword !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match'
+      newErrors.confirmPassword = t('noMatch')
     }
     
     setErrors(newErrors)
@@ -88,8 +90,8 @@ export default function ChangePasswordPage() {
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <Check className="w-8 h-8 text-green-600" />
         </div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Password Changed!</h1>
-        <p className="text-gray-500">Redirecting to settings...</p>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('success')}</h1>
+        <p className="text-gray-500">{t('redirecting')}</p>
       </div>
     )
   }
@@ -105,14 +107,14 @@ export default function ChangePasswordPage() {
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <Lock className="w-8 h-8 text-green-600" />
         </div>
-        <h1 className="text-2xl font-bold text-gray-900">Change Password</h1>
-        <p className="text-gray-500 mt-2">Keep your account secure with a strong password</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+        <p className="text-gray-500 mt-2">{t('subtitle')}</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="relative">
           <Input
-            label="Current Password"
+            label={t('currentPassword')}
             type={showPasswords.current ? 'text' : 'password'}
             value={formData.currentPassword}
             onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
@@ -130,7 +132,7 @@ export default function ChangePasswordPage() {
 
         <div className="relative">
           <Input
-            label="New Password"
+            label={t('newPassword')}
             type={showPasswords.new ? 'text' : 'password'}
             value={formData.newPassword}
             onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
@@ -148,7 +150,7 @@ export default function ChangePasswordPage() {
 
         <div className="relative">
           <Input
-            label="Confirm New Password"
+            label={t('confirmNewPassword')}
             type={showPasswords.confirm ? 'text' : 'password'}
             value={formData.confirmPassword}
             onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
@@ -165,22 +167,22 @@ export default function ChangePasswordPage() {
         </div>
 
         <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-600">
-          <p className="font-medium mb-2">Password requirements:</p>
+          <p className="font-medium mb-2">{t('requirements')}</p>
           <ul className="space-y-1">
             <li className={formData.newPassword.length >= 8 ? 'text-green-600' : ''}>
-              • At least 8 characters
+              • {t('minChars')}
             </li>
             <li className={/[A-Z]/.test(formData.newPassword) ? 'text-green-600' : ''}>
-              • One uppercase letter
+              • {t('uppercase')}
             </li>
             <li className={/[0-9]/.test(formData.newPassword) ? 'text-green-600' : ''}>
-              • One number
+              • {t('number')}
             </li>
           </ul>
         </div>
 
         <Button type="submit" isLoading={isLoading} className="w-full">
-          Change Password
+          {t('title')}
         </Button>
       </form>
     </div>

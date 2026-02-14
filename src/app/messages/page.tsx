@@ -7,6 +7,8 @@ import Image from 'next/image'
 import { Send, ArrowLeft, Loader2, MessageSquare } from 'lucide-react'
 import { formatRelativeTime } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { TranslateButton } from '@/components/translate-button'
+import { useTranslations } from 'next-intl'
 
 interface Conversation {
   partnerId: string
@@ -30,6 +32,7 @@ export default function MessagesPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const toUserId = searchParams.get('to')
+  const t = useTranslations('messages')
   
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [messages, setMessages] = useState<Message[]>([])
@@ -37,6 +40,7 @@ export default function MessagesPage() {
   const [newMessage, setNewMessage] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isSending, setIsSending] = useState(false)
+  const [translatedMessages, setTranslatedMessages] = useState<Record<string, string>>({})
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const fetchConversations = useCallback(async () => {
@@ -162,14 +166,14 @@ export default function MessagesPage() {
       {/* Conversations List */}
       <div className={`w-full md:w-80 border-r border-gray-200 flex flex-col ${selectedConversation ? 'hidden md:flex' : 'flex'}`}>
         <div className="p-4 border-b border-gray-200">
-          <h1 className="text-xl font-bold text-gray-900">Messages</h1>
+          <h1 className="text-xl font-bold text-gray-900">{t('title')}</h1>
         </div>
         <div className="flex-1 overflow-y-auto">
           {conversations.length === 0 ? (
             <div className="p-8 text-center">
               <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500">No messages yet</p>
-              <p className="text-sm text-gray-400 mt-1">Start a conversation with a farmer</p>
+              <p className="text-gray-500">{t('noMessages')}</p>
+              <p className="text-sm text-gray-400 mt-1">{t('noMessagesSubtitle')}</p>
             </div>
           ) : (
             conversations.map((conv) => (
@@ -196,7 +200,7 @@ export default function MessagesPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-gray-900 truncate">{conv.partnerName}</p>
-                  <p className="text-sm text-gray-500 truncate">{conv.lastMessage || 'Start chatting...'}</p>
+                  <p className="text-sm text-gray-500 truncate">{conv.lastMessage || t('startChatting')}</p>
                 </div>
                 <span className="text-xs text-gray-400">
                   {formatRelativeTime(conv.lastMessageTime)}
@@ -242,7 +246,7 @@ export default function MessagesPage() {
           <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
             {messages.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-gray-500">No messages yet. Say hello!</p>
+                <p className="text-gray-500">{t('sayHello')}</p>
               </div>
             ) : (
               messages.map((msg) => (
@@ -257,12 +261,19 @@ export default function MessagesPage() {
                         : 'bg-white text-gray-900 rounded-bl-none shadow-sm'
                     }`}
                   >
-                    <p>{msg.content}</p>
+                    <p>{translatedMessages[msg.id] ?? msg.content}</p>
                     <p className={`text-xs mt-1 ${
                       msg.senderId === session?.user?.id ? 'text-green-100' : 'text-gray-400'
                     }`}>
                       {formatRelativeTime(msg.createdAt)}
                     </p>
+                    {msg.senderId !== session?.user?.id && (
+                      <TranslateButton
+                        texts={[msg.content]}
+                        onTranslated={([translated]) => setTranslatedMessages(prev => ({ ...prev, [msg.id]: translated }))}
+                        onShowOriginal={() => setTranslatedMessages(prev => { const next = { ...prev }; delete next[msg.id]; return next })}
+                      />
+                    )}
                   </div>
                 </div>
               ))
@@ -276,7 +287,7 @@ export default function MessagesPage() {
               type="text"
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="Type a message..."
+              placeholder={t('typeMessage')}
               className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:border-green-500 focus:ring-1 focus:ring-green-500"
             />
             <Button
@@ -296,7 +307,7 @@ export default function MessagesPage() {
         <div className="hidden md:flex flex-1 items-center justify-center bg-gray-50">
           <div className="text-center">
             <MessageSquare className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500">Select a conversation to start messaging</p>
+            <p className="text-gray-500">{t('selectConversation')}</p>
           </div>
         </div>
       )}

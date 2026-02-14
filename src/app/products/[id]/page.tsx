@@ -9,6 +9,8 @@ import { Heart, MessageCircle, Share2, MapPin, ShoppingCart, ChevronLeft, Chevro
 import { formatPrice, formatRelativeTime } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { useGlobalToast } from '@/components/toast-provider'
+import { TranslateButton } from '@/components/translate-button'
+import { useTranslations } from 'next-intl'
 
 interface Product {
   id: string
@@ -62,6 +64,10 @@ export default function ProductDetailPage() {
   const [newComment, setNewComment] = useState('')
   const [isAddingToCart, setIsAddingToCart] = useState(false)
   const [isSubmittingComment, setIsSubmittingComment] = useState(false)
+  const [translatedTitle, setTranslatedTitle] = useState<string | null>(null)
+  const [translatedDesc, setTranslatedDesc] = useState<string | null>(null)
+  const [translatedComments, setTranslatedComments] = useState<Record<string, string>>({})
+  const t = useTranslations('product')
 
   useEffect(() => {
     fetchProduct()
@@ -165,9 +171,9 @@ export default function ProductDetailPage() {
   if (!product) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-12 text-center">
-        <h1 className="text-2xl font-bold text-gray-900">Product not found</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t('productNotFound')}</h1>
         <Link href="/feed" className="text-green-600 hover:underline mt-4 inline-block">
-          Back to Feed
+          {t('backToFeed')}
         </Link>
       </div>
     )
@@ -226,7 +232,7 @@ export default function ProductDetailPage() {
         <div className="space-y-6">
           <div>
             <span className="text-sm text-green-600 font-medium">{product.category.name}</span>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mt-1">{product.title}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mt-1">{translatedTitle ?? product.title}</h1>
           </div>
 
           {/* Farmer Info */}
@@ -258,11 +264,24 @@ export default function ProductDetailPage() {
           </div>
 
           {/* Description */}
-          <p className="text-gray-600 leading-relaxed">{product.description}</p>
+          <div>
+            <p className="text-gray-600 leading-relaxed">{translatedDesc ?? product.description}</p>
+            <TranslateButton
+              texts={[product.title, product.description]}
+              onTranslated={([title, desc]) => {
+                setTranslatedTitle(title)
+                setTranslatedDesc(desc)
+              }}
+              onShowOriginal={() => {
+                setTranslatedTitle(null)
+                setTranslatedDesc(null)
+              }}
+            />
+          </div>
 
           {/* Stock */}
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500">Available:</span>
+            <span className="text-sm text-gray-500">{t('available')}:</span>
             <span className={`font-medium ${product.quantity > 5 ? 'text-green-600' : 'text-yellow-600'}`}>
               {product.quantity} {product.unit}
             </span>
@@ -270,7 +289,7 @@ export default function ProductDetailPage() {
 
           {/* Delivery Options */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Delivery Option</label>
+            <label className="text-sm font-medium text-gray-700">{t('delivery.title')}</label>
             <div className="flex flex-wrap gap-2">
               {(product.deliveryOptions || ['HOME_DELIVERY']).map((option: string) => (
                 <button
@@ -287,7 +306,7 @@ export default function ProductDetailPage() {
               ))}
             </div>
             {product.deliveryFee && (
-              <p className="text-sm text-gray-500">Delivery fee: {formatPrice(product.deliveryFee)}</p>
+              <p className="text-sm text-gray-500">{t('deliveryFee')}: {formatPrice(product.deliveryFee)}</p>
             )}
           </div>
 
@@ -316,7 +335,7 @@ export default function ProductDetailPage() {
               disabled={product.quantity === 0}
             >
               <ShoppingCart className="w-5 h-5 mr-2" />
-              Add to Cart
+              {t('addToCart')}
             </Button>
           </div>
 
@@ -327,15 +346,15 @@ export default function ProductDetailPage() {
               className={`flex items-center gap-2 ${product.isLiked ? 'text-red-500' : 'text-gray-600 hover:text-red-500'}`}
             >
               <Heart className={`w-6 h-6 ${product.isLiked ? 'fill-current' : ''}`} />
-              <span>{product.likesCount} likes</span>
+              <span>{product.likesCount} {t('likes')}</span>
             </button>
             <span className="flex items-center gap-2 text-gray-600">
               <MessageCircle className="w-6 h-6" />
-              <span>{product.commentsCount} comments</span>
+              <span>{product.commentsCount} {t('comments')}</span>
             </span>
             <button className="flex items-center gap-2 text-gray-600 hover:text-green-600">
               <Share2 className="w-6 h-6" />
-              <span>Share</span>
+              <span>{t('share')}</span>
             </button>
           </div>
         </div>
@@ -343,7 +362,7 @@ export default function ProductDetailPage() {
 
       {/* Comments Section */}
       <div id="comments" className="mt-12 border-t border-gray-200 pt-8">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">Comments ({comments.length})</h2>
+        <h2 className="text-xl font-bold text-gray-900 mb-6">{t('comments')} ({comments.length})</h2>
         
         {/* Add Comment */}
         {session ? (
@@ -352,7 +371,7 @@ export default function ProductDetailPage() {
               type="text"
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
-              placeholder="Add a comment..."
+              placeholder={t('addComment')}
               className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:border-green-500 focus:ring-1 focus:ring-green-500"
             />
             <Button type="submit" isLoading={isSubmittingComment} disabled={!newComment.trim()}>
@@ -361,14 +380,14 @@ export default function ProductDetailPage() {
           </form>
         ) : (
           <div className="bg-gray-50 p-4 rounded-lg mb-8 text-center">
-            <Link href="/login" className="text-green-600 hover:underline">Login</Link> to add a comment
+            <Link href="/login" className="text-green-600 hover:underline">Login</Link> {t('loginToComment')}
           </div>
         )}
 
         {/* Comments List */}
         <div className="space-y-6">
           {comments.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">No comments yet. Be the first to comment!</p>
+            <p className="text-gray-500 text-center py-8">{t('noComments')}</p>
           ) : (
             comments.map((comment) => (
               <div key={comment.id} className="flex gap-3">
@@ -384,7 +403,12 @@ export default function ProductDetailPage() {
                 <div className="flex-1">
                   <div className="bg-gray-50 rounded-lg px-4 py-3">
                     <p className="font-medium text-sm text-gray-900">{comment.user.fullName}</p>
-                    <p className="text-gray-700">{comment.content}</p>
+                    <p className="text-gray-700">{translatedComments[comment.id] ?? comment.content}</p>
+                    <TranslateButton
+                      texts={[comment.content]}
+                      onTranslated={([translated]) => setTranslatedComments(prev => ({ ...prev, [comment.id]: translated }))}
+                      onShowOriginal={() => setTranslatedComments(prev => { const next = { ...prev }; delete next[comment.id]; return next })}
+                    />
                   </div>
                   <span className="text-xs text-gray-400 ml-4">{formatRelativeTime(comment.createdAt)}</span>
                 </div>

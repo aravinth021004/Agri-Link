@@ -1,8 +1,12 @@
 import Link from 'next/link'
 import { ArrowRight, Leaf, Users, TrendingUp, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useTranslations } from 'next-intl'
 
 export default function HomePage() {
+  const t = useTranslations('home')
+  const tFooter = useTranslations('footer')
+
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -10,23 +14,22 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
-              Farm Fresh,{' '}
-              <span className="text-green-600">Direct to You</span>
+              {t('heroTitlePart1')}{' '}
+              <span className="text-green-600">{t('heroTitleHighlight')}</span>
             </h1>
             <p className="text-lg md:text-xl text-gray-600 mb-8">
-              Connect directly with local farmers. No middlemen, no markups. 
-              Get fresh produce at fair prices while supporting farming communities.
+              {t('heroDescription')}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/feed">
                 <Button size="lg" className="w-full sm:w-auto">
-                  Explore Products
+                  {t('exploreProducts')}
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               </Link>
               <Link href="/signup">
                 <Button size="lg" variant="outline" className="w-full sm:w-auto">
-                  Become a Farmer
+                  {t('becomeFarmer')}
                 </Button>
               </Link>
             </div>
@@ -38,28 +41,28 @@ export default function HomePage() {
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
-            Why Choose AgriLink?
+            {t('whyChooseUs')}
           </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             <FeatureCard
               icon={<Leaf className="w-8 h-8 text-green-600" />}
-              title="Fresh from Farm"
-              description="Products go directly from farm to your doorstep, ensuring maximum freshness."
+              title={t('features.freshTitle')}
+              description={t('features.freshDesc')}
             />
             <FeatureCard
               icon={<Users className="w-8 h-8 text-green-600" />}
-              title="Support Farmers"
-              description="Farmers earn 100% of what you pay - no commissions or middlemen fees."
+              title={t('supportTitle')}
+              description={t('supportDesc')}
             />
             <FeatureCard
               icon={<TrendingUp className="w-8 h-8 text-green-600" />}
-              title="Fair Prices"
-              description="Pay fair prices for quality produce. No inflated retail markups."
+              title={t('features.priceTitle')}
+              description={t('features.priceDesc')}
             />
             <FeatureCard
               icon={<ShieldCheck className="w-8 h-8 text-green-600" />}
-              title="Trusted Quality"
-              description="Rate and review farmers. Buy from trusted sellers in your community."
+              title={t('trustedTitle')}
+              description={t('trustedDesc')}
             />
           </div>
         </div>
@@ -69,23 +72,23 @@ export default function HomePage() {
       <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
-            How It Works
+            {t('howItWorks')}
           </h2>
           <div className="grid md:grid-cols-3 gap-8">
             <StepCard
               number="1"
-              title="Browse & Discover"
-              description="Explore products from local farmers. Like, comment, and follow your favorites."
+              title={t('step1Title')}
+              description={t('step1Desc')}
             />
             <StepCard
               number="2"
-              title="Order & Pay"
-              description="Add to cart, choose delivery options, and pay securely online."
+              title={t('step2Title')}
+              description={t('step2Desc')}
             />
             <StepCard
               number="3"
-              title="Receive & Enjoy"
-              description="Get fresh produce delivered to your door or pick up from the farm."
+              title={t('step3Title')}
+              description={t('step3Desc')}
             />
           </div>
         </div>
@@ -94,20 +97,19 @@ export default function HomePage() {
       {/* CTA Section */}
       <section className="py-16 bg-gradient-green text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold mb-4">Ready to Get Started?</h2>
+          <h2 className="text-3xl font-bold mb-4">{t('ctaTitle')}</h2>
           <p className="text-lg opacity-90 mb-8 max-w-2xl mx-auto">
-            Join thousands of customers and farmers already using AgriLink 
-            to buy and sell fresh produce.
+            {t('ctaDescription')}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/signup">
               <Button size="lg" variant="secondary" className="w-full sm:w-auto">
-                Create Account
+                {t('createAccount')}
               </Button>
             </Link>
             <Link href="/feed">
               <Button size="lg" variant="outline" className="w-full sm:w-auto bg-transparent text-white border-white hover:bg-white/10">
-                Browse as Guest
+                {t('browseAsGuest')}
               </Button>
             </Link>
           </div>
@@ -126,35 +128,35 @@ export default function HomePage() {
                 <span className="text-xl font-bold text-white">AgriLink</span>
               </div>
               <p className="text-sm">
-                Connecting farmers directly with consumers for fresh, fair, and sustainable food.
+                {tFooter('tagline')}
               </p>
             </div>
             <div>
-              <h4 className="font-semibold text-white mb-4">Quick Links</h4>
+              <h4 className="font-semibold text-white mb-4">{tFooter('quickLinks')}</h4>
               <ul className="space-y-2 text-sm">
-                <li><Link href="/feed" className="hover:text-green-400">Browse Products</Link></li>
-                <li><Link href="/about" className="hover:text-green-400">About Us</Link></li>
-                <li><Link href="/pricing" className="hover:text-green-400">Farmer Pricing</Link></li>
+                <li><Link href="/feed" className="hover:text-green-400">{tFooter('browseProducts')}</Link></li>
+                <li><Link href="/about" className="hover:text-green-400">{tFooter('about')}</Link></li>
+                <li><Link href="/subscription" className="hover:text-green-400">{tFooter('becomeSeller')}</Link></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold text-white mb-4">Support</h4>
+              <h4 className="font-semibold text-white mb-4">{tFooter('support')}</h4>
               <ul className="space-y-2 text-sm">
-                <li><Link href="/help" className="hover:text-green-400">Help Center</Link></li>
-                <li><Link href="/contact" className="hover:text-green-400">Contact Us</Link></li>
-                <li><Link href="/faq" className="hover:text-green-400">FAQs</Link></li>
+                <li><Link href="/help" className="hover:text-green-400">{tFooter('help')}</Link></li>
+                <li><Link href="/contact" className="hover:text-green-400">{tFooter('contact')}</Link></li>
+                <li><Link href="/faq" className="hover:text-green-400">{tFooter('faqs')}</Link></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold text-white mb-4">Legal</h4>
+              <h4 className="font-semibold text-white mb-4">{tFooter('legal')}</h4>
               <ul className="space-y-2 text-sm">
-                <li><Link href="/privacy" className="hover:text-green-400">Privacy Policy</Link></li>
-                <li><Link href="/terms" className="hover:text-green-400">Terms of Service</Link></li>
+                <li><Link href="/privacy" className="hover:text-green-400">{tFooter('privacy')}</Link></li>
+                <li><Link href="/terms" className="hover:text-green-400">{tFooter('terms')}</Link></li>
               </ul>
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm">
-            <p>© 2024 AgriLink. All rights reserved.</p>
+            <p>© 2024 AgriLink. {tFooter('allRightsReserved')}.</p>
           </div>
         </div>
       </footer>

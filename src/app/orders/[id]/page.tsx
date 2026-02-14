@@ -10,6 +10,8 @@ import { formatPrice, formatDate } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { useGlobalToast } from '@/components/toast-provider'
+import { TranslateButton } from '@/components/translate-button'
+import { useTranslations } from 'next-intl'
 
 interface OrderDetail {
   id: string
@@ -62,10 +64,10 @@ interface OrderDetail {
 const statusSteps = ['PENDING', 'CONFIRMED', 'PACKED', 'OUT_FOR_DELIVERY', 'DELIVERED']
 
 const statusActions: Record<string, { next: string; label: string }> = {
-  PENDING: { next: 'CONFIRMED', label: 'Confirm Order' },
-  CONFIRMED: { next: 'PACKED', label: 'Mark Packed' },
-  PACKED: { next: 'OUT_FOR_DELIVERY', label: 'Out for Delivery' },
-  OUT_FOR_DELIVERY: { next: 'DELIVERED', label: 'Mark Delivered' },
+  PENDING: { next: 'CONFIRMED', label: 'confirmOrder' },
+  CONFIRMED: { next: 'PACKED', label: 'markPacked' },
+  PACKED: { next: 'OUT_FOR_DELIVERY', label: 'outForDeliveryAction' },
+  OUT_FOR_DELIVERY: { next: 'DELIVERED', label: 'markDelivered' },
 }
 
 export default function OrderDetailPage() {
@@ -79,6 +81,7 @@ export default function OrderDetailPage() {
   const [rating, setRating] = useState(5)
   const [review, setReview] = useState('')
   const [isSubmittingRating, setIsSubmittingRating] = useState(false)
+  const [translatedItems, setTranslatedItems] = useState<Record<string, string>>({})
 
   // Dialog states
   const [cancelConfirm, setCancelConfirm] = useState(false)
@@ -86,6 +89,7 @@ export default function OrderDetailPage() {
     isOpen: false, newStatus: '', label: '',
   })
   const [isActionLoading, setIsActionLoading] = useState(false)
+  const t = useTranslations('orders')
 
   useEffect(() => {
     if (authStatus === 'authenticated') {
@@ -117,7 +121,7 @@ export default function OrderDetailPage() {
         body: JSON.stringify({ status: newStatus }),
       })
       if (res.ok) {
-        showToast(newStatus === 'CANCELLED' ? 'Order cancelled successfully' : 'Order updated successfully', 'success')
+        showToast(newStatus === 'CANCELLED' ? t('orderCancelledSuccess') : t('orderUpdatedSuccess'), 'success')
         fetchOrder()
       } else {
         const data = await res.json()
@@ -148,7 +152,7 @@ export default function OrderDetailPage() {
         }),
       })
       setShowRating(false)
-      showToast('Thanks for your feedback!', 'success')
+      showToast(t('thanks'), 'success')
     } catch (error) {
       console.error('Failed to submit rating:', error)
     } finally {
@@ -167,9 +171,9 @@ export default function OrderDetailPage() {
   if (!order) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-12 text-center">
-        <h1 className="text-2xl font-bold text-gray-900">Order not found</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t('orderNotFound')}</h1>
         <Link href="/orders" className="text-green-600 hover:underline mt-4 inline-block">
-          Back to Orders
+          {t('backToOrders')}
         </Link>
       </div>
     )
@@ -185,14 +189,14 @@ export default function OrderDetailPage() {
 
   // Determine which person's info to display (show the other party)
   const contactPerson = isFarmer ? {
-    label: 'Customer',
+    label: t('customer'),
     id: order.customer.id,
     name: order.customer.fullName,
     phone: order.customer.phone,
     image: order.customer.profileImage,
     link: null, // no public profile for customers
   } : {
-    label: 'Seller',
+    label: t('seller'),
     id: order.farmer.id,
     name: order.farmer.fullName,
     phone: order.farmer.phone,
@@ -207,9 +211,9 @@ export default function OrderDetailPage() {
         isOpen={cancelConfirm}
         onClose={() => setCancelConfirm(false)}
         onConfirm={() => updateOrderStatus('CANCELLED')}
-        title="Cancel Order"
-        message={`Are you sure you want to cancel Order #${order.orderNumber}?${isFarmer ? ' Stock will be restored and the customer will be notified.' : ' This action cannot be undone.'}`}
-        confirmLabel="Cancel Order"
+        title={t('cancelOrder')}
+        message={`${t('cancelOrder')} #${order.orderNumber}?${isFarmer ? ' ' + t('stockRestoredNote') : ' ' + t('thisCannotBeUndone')}`}
+        confirmLabel={t('cancelOrder')}
         variant="danger"
         isLoading={isActionLoading}
       />
@@ -219,9 +223,9 @@ export default function OrderDetailPage() {
         isOpen={statusConfirm.isOpen}
         onClose={() => setStatusConfirm({ isOpen: false, newStatus: '', label: '' })}
         onConfirm={() => updateOrderStatus(statusConfirm.newStatus)}
-        title="Update Order Status"
-        message={`Mark Order #${order.orderNumber} as "${statusConfirm.label}"?`}
-        confirmLabel={statusConfirm.label}
+        title={t('updateOrderStatus')}
+        message={`${t('orderNumber')} #${order.orderNumber} → ${statusConfirm.label ? t(statusConfirm.label) : ''}`}
+        confirmLabel={statusConfirm.label ? t(statusConfirm.label) : ''}
         isLoading={isActionLoading}
       />
 
@@ -235,8 +239,8 @@ export default function OrderDetailPage() {
         <div className="p-6 border-b border-gray-100">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-xl font-bold text-gray-900">Order #{order.orderNumber}</h1>
-              <p className="text-sm text-gray-500 mt-1">Placed on {formatDate(order.createdAt)}</p>
+              <h1 className="text-xl font-bold text-gray-900">{t('orderNumber')} #{order.orderNumber}</h1>
+              <p className="text-sm text-gray-500 mt-1">{t('placedOn')} {formatDate(order.createdAt)}</p>
             </div>
             <span className={`px-3 py-1 rounded-full text-sm font-medium ${
               order.status === 'DELIVERED' ? 'bg-green-100 text-green-700' :
@@ -293,13 +297,13 @@ export default function OrderDetailPage() {
                 {order.status === 'CONFIRMED' && <Package className="w-4 h-4 mr-1" />}
                 {order.status === 'PACKED' && <Truck className="w-4 h-4 mr-1" />}
                 {order.status === 'OUT_FOR_DELIVERY' && <CheckCircle className="w-4 h-4 mr-1" />}
-                {farmerAction.label}
+                {t(farmerAction.label)}
               </Button>
             )}
             {canFarmerCancel && (
               <Button variant="destructive" onClick={() => setCancelConfirm(true)}>
                 <XCircle className="w-4 h-4 mr-1" />
-                Cancel Order
+                {t('cancelOrder')}
               </Button>
             )}
           </div>
@@ -309,10 +313,10 @@ export default function OrderDetailPage() {
         {canCustomerCancel && (
           <div className="px-6 py-4 bg-red-50 border-b border-gray-100">
             <div className="flex items-center justify-between">
-              <p className="text-sm text-gray-700">Changed your mind? You can cancel while the order is pending.</p>
+              <p className="text-sm text-gray-700">{t('cancelPendingNote')}</p>
               <Button variant="destructive" size="sm" onClick={() => setCancelConfirm(true)}>
                 <XCircle className="w-4 h-4 mr-1" />
-                Cancel Order
+                {t('cancelOrder')}
               </Button>
             </div>
           </div>
@@ -364,7 +368,7 @@ export default function OrderDetailPage() {
 
         {/* Items */}
         <div className="p-6 border-b border-gray-100">
-          <h2 className="font-semibold text-gray-900 mb-3">Items</h2>
+          <h2 className="font-semibold text-gray-900 mb-3">{t('items')}</h2>
           <div className="space-y-3">
             {order.items.map((item) => (
               <div key={item.id} className="flex items-center gap-3">
@@ -377,7 +381,7 @@ export default function OrderDetailPage() {
                   />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900 truncate">{item.product.title}</p>
+                  <p className="font-medium text-gray-900 truncate">{translatedItems[item.id] ?? item.product.title}</p>
                   <p className="text-sm text-gray-500">
                     {formatPrice(item.unitPrice)} × {item.quantity} {item.product.unit}
                   </p>
@@ -386,6 +390,15 @@ export default function OrderDetailPage() {
               </div>
             ))}
           </div>
+          <TranslateButton
+            texts={order.items.map(item => item.product.title)}
+            onTranslated={(translations) => {
+              const map: Record<string, string> = {}
+              order.items.forEach((item, i) => { map[item.id] = translations[i] })
+              setTranslatedItems(map)
+            }}
+            onShowOriginal={() => setTranslatedItems({})}
+          />
         </div>
 
         {/* Delivery Address */}
@@ -393,7 +406,7 @@ export default function OrderDetailPage() {
           <div className="p-6 border-b border-gray-100">
             <h2 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
               <MapPin className="w-5 h-5 text-green-600" />
-              Delivery Address
+              {t('deliveryAddress')}
             </h2>
             <p className="text-gray-600">
               {order.deliveryAddress.street}<br />
@@ -406,7 +419,7 @@ export default function OrderDetailPage() {
         {/* Notes */}
         {order.notes && (
           <div className="p-6 border-b border-gray-100">
-            <h2 className="font-semibold text-gray-900 mb-2">Notes</h2>
+            <h2 className="font-semibold text-gray-900 mb-2">{t('notes')}</h2>
             <p className="text-sm text-gray-600">{order.notes}</p>
           </div>
         )}
@@ -415,16 +428,16 @@ export default function OrderDetailPage() {
         <div className="p-6">
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-gray-600">Subtotal</span>
+              <span className="text-gray-600">{t('subtotal')}</span>
               <span>{formatPrice(order.subtotal)}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">Delivery ({order.deliveryOption.replace(/_/g, ' ')})</span>
+              <span className="text-gray-600">{t('delivery')} ({order.deliveryOption.replace(/_/g, ' ')})</span>
               <span>{formatPrice(order.deliveryFee)}</span>
             </div>
             <hr className="my-2" />
             <div className="flex justify-between text-lg font-bold">
-              <span>Total</span>
+              <span>{t('total')}</span>
               <span className="text-green-600">{formatPrice(order.totalAmount)}</span>
             </div>
           </div>
@@ -433,14 +446,14 @@ export default function OrderDetailPage() {
           {isCustomer && order.status === 'DELIVERED' && !showRating && (
             <Button onClick={() => setShowRating(true)} className="w-full mt-6" variant="outline">
               <Star className="w-4 h-4 mr-2" />
-              Rate this Order
+              {t('rateThisOrder')}
             </Button>
           )}
 
           {/* Rating Form */}
           {showRating && (
             <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-              <h3 className="font-medium text-gray-900 mb-3">Rate your experience</h3>
+              <h3 className="font-medium text-gray-900 mb-3">{t('rateExperience')}</h3>
               <div className="flex gap-2 mb-4">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
@@ -457,7 +470,7 @@ export default function OrderDetailPage() {
               <textarea
                 value={review}
                 onChange={(e) => setReview(e.target.value)}
-                placeholder="Share your experience (optional)"
+                placeholder={t('shareExperience')}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm resize-none"
                 rows={3}
               />

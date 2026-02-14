@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { Bell, ShoppingBag, Package, MessageCircle, Loader2, Check } from 'lucide-react'
 import { formatRelativeTime } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { useTranslations } from 'next-intl'
 
 interface Notification {
   id: string
@@ -21,6 +22,7 @@ interface Notification {
 export default function NotificationsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const t = useTranslations('notifications')
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -75,11 +77,11 @@ export default function NotificationsPage() {
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
         {unreadCount > 0 && (
           <Button variant="outline" size="sm" onClick={markAllAsRead}>
             <Check className="w-4 h-4 mr-2" />
-            Mark all as read
+            {t('markAllRead')}
           </Button>
         )}
       </div>
@@ -87,8 +89,8 @@ export default function NotificationsPage() {
       {notifications.length === 0 ? (
         <div className="text-center py-16">
           <Bell className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">No notifications</h2>
-          <p className="text-gray-500">You&apos;re all caught up!</p>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">{t('empty')}</h2>
+          <p className="text-gray-500">{t('emptySubtitle')}</p>
         </div>
       ) : (
         <div className="space-y-3">

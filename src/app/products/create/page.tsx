@@ -8,6 +8,7 @@ import { Upload, X, Plus, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useGlobalToast } from '@/components/toast-provider'
+import { useTranslations } from 'next-intl'
 
 interface Category {
   id: string
@@ -36,6 +37,8 @@ export default function CreateProductPage() {
     deliveryFee: '0',
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const t = useTranslations('product')
+  const tCommon = useTranslations('common')
 
   useEffect(() => {
     if (status === 'authenticated') {
@@ -163,13 +166,13 @@ export default function CreateProductPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Add New Product</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">{t('createProduct')}</h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Images */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Product Images <span className="text-red-500">*</span>
+            {t('productImages')} <span className="text-red-500">*</span>
           </label>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
             {images.map((url, idx) => (
@@ -210,7 +213,7 @@ export default function CreateProductPage() {
 
         {/* Title */}
         <Input
-          label="Product Title"
+          label={t('productTitle')}
           placeholder="e.g., Fresh Organic Tomatoes"
           value={formData.title}
           onChange={(e) => setFormData({ ...formData, title: e.target.value })}
@@ -221,7 +224,7 @@ export default function CreateProductPage() {
         {/* Description */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Description <span className="text-red-500">*</span>
+            {t('productDescription')} <span className="text-red-500">*</span>
           </label>
           <textarea
             value={formData.description}
@@ -238,7 +241,7 @@ export default function CreateProductPage() {
         {/* Price and Quantity */}
         <div className="grid sm:grid-cols-3 gap-4">
           <Input
-            label="Price (₹)"
+            label={t('productPrice')}
             type="number"
             placeholder="100"
             value={formData.price}
@@ -247,7 +250,7 @@ export default function CreateProductPage() {
             required
           />
           <Input
-            label="Quantity"
+            label={t('productQuantity')}
             type="number"
             placeholder="50"
             value={formData.quantity}
@@ -256,18 +259,18 @@ export default function CreateProductPage() {
             required
           />
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Unit</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('unit')}</label>
             <select
               value={formData.unit}
               onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
             >
-              <option value="kg">Kilogram (kg)</option>
-              <option value="g">Gram (g)</option>
-              <option value="piece">Piece</option>
-              <option value="dozen">Dozen</option>
-              <option value="litre">Litre</option>
-              <option value="bundle">Bundle</option>
+              <option value="kg">{t('unitKg')}</option>
+              <option value="g">{t('unitG')}</option>
+              <option value="piece">{t('unitPiece')}</option>
+              <option value="dozen">{t('unitDozen')}</option>
+              <option value="litre">{t('unitLitre')}</option>
+              <option value="bundle">{t('unitBundle')}</option>
             </select>
           </div>
         </div>
@@ -275,7 +278,7 @@ export default function CreateProductPage() {
         {/* Category */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Category <span className="text-red-500">*</span>
+            {t('productCategory')} <span className="text-red-500">*</span>
           </label>
           <select
             value={formData.categoryId}
@@ -284,7 +287,7 @@ export default function CreateProductPage() {
               errors.categoryId ? 'border-red-500' : 'border-gray-300'
             }`}
           >
-            <option value="">Select category</option>
+            <option value="">{t('selectCategory')}</option>
             {categories.map((cat) => (
               <option key={cat.id} value={cat.id}>{cat.name}</option>
             ))}
@@ -295,7 +298,7 @@ export default function CreateProductPage() {
         {/* Delivery Options */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Delivery Options <span className="text-red-500">*</span>
+            {t('delivery.title')} <span className="text-red-500">*</span>
           </label>
           <div className="flex flex-wrap gap-3">
             {['HOME_DELIVERY', 'FARM_PICKUP', 'MEETUP_POINT'].map((option) => (
@@ -320,14 +323,14 @@ export default function CreateProductPage() {
         {formData.deliveryOptions.includes('HOME_DELIVERY') && (
           <div className="grid sm:grid-cols-2 gap-4">
             <Input
-              label="Delivery Radius (km)"
+              label={t('deliveryRadius')}
               type="number"
               placeholder="10"
               value={formData.deliveryRadius}
               onChange={(e) => setFormData({ ...formData, deliveryRadius: e.target.value })}
             />
             <Input
-              label="Delivery Fee (₹)"
+              label={t('deliveryFeeLabel')}
               type="number"
               placeholder="50"
               value={formData.deliveryFee}
@@ -340,10 +343,10 @@ export default function CreateProductPage() {
         <div className="flex gap-4 pt-4">
           <Button type="submit" isLoading={isLoading} className="flex-1">
             <Plus className="w-4 h-4 mr-2" />
-            Create Product
+            {t('createProduct')}
           </Button>
           <Button type="button" variant="outline" onClick={() => router.back()}>
-            Cancel
+            {tCommon('cancel')}
           </Button>
         </div>
       </form>

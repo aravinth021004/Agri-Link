@@ -107,7 +107,7 @@ export default function CartPage() {
   }
 
   const clearCart = async () => {
-    if (!confirm('Clear all items from cart?')) return
+    if (!confirm(t('clearCartConfirm'))) return
     try {
       await fetch('/api/cart', { method: 'DELETE' })
       fetchCart()
@@ -134,7 +134,7 @@ export default function CartPage() {
         <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
         {cartGroups.length > 0 && (
           <button onClick={clearCart} className="text-sm text-red-500 hover:text-red-600">
-            Clear Cart
+            {t('clearCart')}
           </button>
         )}
       </div>
@@ -156,7 +156,7 @@ export default function CartPage() {
               <div key={group.farmer.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="bg-green-50 px-4 py-3 border-b border-green-100">
                   <Link href={`/farmers/${group.farmer.id}`} className="font-medium text-green-700 hover:text-green-800">
-                    {group.farmer.fullName}&apos;s Products
+                    {t('farmersProducts', { name: group.farmer.fullName })}
                   </Link>
                 </div>
                 <div className="divide-y divide-gray-100">
@@ -230,7 +230,7 @@ export default function CartPage() {
           {/* Order Summary */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 sticky top-24">
-              <h2 className="text-lg font-bold text-gray-900 mb-4">Order Summary</h2>
+              <h2 className="text-lg font-bold text-gray-900 mb-4">{t('orderSummary')}</h2>
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Items ({totalItems})</span>
@@ -253,7 +253,7 @@ export default function CartPage() {
                 </Button>
               </Link>
               <p className="text-xs text-gray-400 text-center mt-4">
-                Orders will be placed separately per farmer
+                {t('perFarmerNote')}
               </p>
             </div>
           </div>

@@ -127,7 +127,7 @@ export default function SignupPage() {
             <div className="space-y-6">
               <Input
                 label="OTP"
-                placeholder="Enter 6-digit code"
+                placeholder={t('otpPlaceholder')}
                 value={otp}
                 onChange={(e) => setOtp(e.target.value)}
                 maxLength={6}

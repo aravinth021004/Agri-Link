@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl'
 
 export function Footer() {
   const t = useTranslations('footer')
+  const tNav = useTranslations('nav')
 
   return (
     <footer className="bg-gray-900 text-gray-300 mt-auto">
@@ -19,7 +20,7 @@ export function Footer() {
               <span className="text-xl font-bold">AgriLink</span>
             </Link>
             <p className="mt-4 text-sm">
-              Connecting farmers directly with consumers. Fresh produce, fair prices, sustainable farming.
+              {t('tagline')}
             </p>
             <div className="flex gap-4 mt-6">
               <a href="#" className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-green-600 transition">
@@ -39,21 +40,21 @@ export function Footer() {
 
           {/* Quick Links */}
           <div>
-            <h3 className="text-white font-semibold mb-4">Quick Links</h3>
+            <h3 className="text-white font-semibold mb-4">{t('quickLinks')}</h3>
             <ul className="space-y-3 text-sm">
-              <li><Link href="/feed" className="hover:text-green-400 transition">Browse Products</Link></li>
-              <li><Link href="/search" className="hover:text-green-400 transition">Search</Link></li>
-              <li><Link href="/subscription" className="hover:text-green-400 transition">Become a Seller</Link></li>
+              <li><Link href="/feed" className="hover:text-green-400 transition">{t('browseProducts')}</Link></li>
+              <li><Link href="/search" className="hover:text-green-400 transition">{tNav('search')}</Link></li>
+              <li><Link href="/subscription" className="hover:text-green-400 transition">{t('becomeSeller')}</Link></li>
               <li><Link href="/about" className="hover:text-green-400 transition">{t('about')}</Link></li>
             </ul>
           </div>
 
           {/* Support */}
           <div>
-            <h3 className="text-white font-semibold mb-4">Support</h3>
+            <h3 className="text-white font-semibold mb-4">{t('support')}</h3>
             <ul className="space-y-3 text-sm">
               <li><Link href="/help" className="hover:text-green-400 transition">{t('help')}</Link></li>
-              <li><Link href="/faq" className="hover:text-green-400 transition">FAQs</Link></li>
+              <li><Link href="/faq" className="hover:text-green-400 transition">{t('faqs')}</Link></li>
               <li><Link href="/terms" className="hover:text-green-400 transition">{t('terms')}</Link></li>
               <li><Link href="/privacy" className="hover:text-green-400 transition">{t('privacy')}</Link></li>
             </ul>
@@ -80,11 +81,11 @@ export function Footer() {
         </div>
 
         <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p className="text-sm">© 2024 AgriLink. All rights reserved.</p>
+          <p className="text-sm">© 2024 AgriLink. {t('allRightsReserved')}.</p>
           <div className="flex gap-6 text-sm">
             <Link href="/terms" className="hover:text-green-400 transition">{t('terms')}</Link>
             <Link href="/privacy" className="hover:text-green-400 transition">{t('privacy')}</Link>
-            <Link href="/cookies" className="hover:text-green-400 transition">Cookies</Link>
+            <Link href="/cookies" className="hover:text-green-400 transition">{t('cookies')}</Link>
           </div>
         </div>
       </div>

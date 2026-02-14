@@ -50,7 +50,7 @@ export default function SettingsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ language: currentLocale }),
       })
-      showToast('Settings saved!', 'success')
+      showToast(t('settingsSaved'), 'success')
     } catch (error) {
       console.error('Failed to save settings:', error)
     } finally {
@@ -59,7 +59,7 @@ export default function SettingsPage() {
   }
 
   const handleLogout = async () => {
-    if (confirm('Are you sure you want to log out?')) {
+    if (confirm(t('logoutConfirm'))) {
       await signOut({ callbackUrl: '/' })
     }
   }
@@ -85,7 +85,7 @@ export default function SettingsPage() {
             </div>
             <div>
               <h2 className="font-semibold text-gray-900">{t('language')}</h2>
-              <p className="text-sm text-gray-500">Choose your preferred language</p>
+              <p className="text-sm text-gray-500">{t('selectLanguage')}</p>
             </div>
           </div>
           <div className="grid grid-cols-3 gap-3">
@@ -113,7 +113,7 @@ export default function SettingsPage() {
             </div>
             <div>
               <h2 className="font-semibold text-gray-900">{t('notifications')}</h2>
-              <p className="text-sm text-gray-500">Manage notification preferences</p>
+              <p className="text-sm text-gray-500">{t('notificationPrefs')}</p>
             </div>
           </div>
           <div className="space-y-4">
@@ -170,7 +170,7 @@ export default function SettingsPage() {
           >
             <div className="flex items-center gap-3">
               <Settings className="w-5 h-5 text-gray-400" />
-              <span className="text-gray-700">Edit Profile</span>
+              <span className="text-gray-700">{t('editProfile')}</span>
             </div>
             <ChevronRight className="w-5 h-5 text-gray-400" />
           </button>
@@ -199,7 +199,7 @@ export default function SettingsPage() {
         {/* Save Button */}
         <Button onClick={handleSave} isLoading={isSaving} className="w-full">
           <Save className="w-4 h-4 mr-2" />
-          Save Settings
+          {t('saveSettings')}
         </Button>
 
         {/* App Info */}

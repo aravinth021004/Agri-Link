@@ -8,6 +8,8 @@ import { useSession } from 'next-auth/react'
 import { MapPin, Users, Star, Package, MessageCircle, Loader2 } from 'lucide-react'
 import { ProductCard } from '@/components/product-card'
 import { Button } from '@/components/ui/button'
+import { TranslateButton } from '@/components/translate-button'
+import { useTranslations } from 'next-intl'
 
 interface Farmer {
   id: string
@@ -54,6 +56,8 @@ export default function FarmerProfilePage() {
   const [averageRating, setAverageRating] = useState<{ average: number; count: number } | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isFollowLoading, setIsFollowLoading] = useState(false)
+  const [translatedBio, setTranslatedBio] = useState<string | null>(null)
+  const t = useTranslations('farmer')
 
   useEffect(() => {
     fetchFarmerData()
@@ -159,9 +163,9 @@ export default function FarmerProfilePage() {
   if (!farmer) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-12 text-center">
-        <h1 className="text-2xl font-bold text-gray-900">Farmer not found</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t('farmerNotFound')}</h1>
         <Link href="/feed" className="text-green-600 hover:underline mt-4 inline-block">
-          Back to Feed
+          {t('backToFeed')}
         </Link>
       </div>
     )
@@ -195,7 +199,7 @@ export default function FarmerProfilePage() {
                 {averageRating && averageRating.count > 0 && (
                   <span className="flex items-center gap-1 text-yellow-600">
                     <Star className="w-4 h-4 fill-current" />
-                    {averageRating.average.toFixed(1)} ({averageRating.count} ratings)
+                    {averageRating.average.toFixed(1)} ({averageRating.count} {t('ratings')})
                   </span>
                 )}
               </div>
@@ -208,7 +212,7 @@ export default function FarmerProfilePage() {
                     isLoading={isFollowLoading}
                     variant={isFollowing ? 'outline' : 'default'}
                   >
-                    {isFollowing ? 'Following' : 'Follow'}
+                    {isFollowing ? t('following') : t('follow')}
                   </Button>
                   <Link href={`/messages?to=${farmer.id}`}>
                     <Button variant="outline">
@@ -224,17 +228,24 @@ export default function FarmerProfilePage() {
           <div className="flex gap-6 mt-6">
             <div className="text-center">
               <p className="text-2xl font-bold text-gray-900">{farmer._count.products}</p>
-              <p className="text-sm text-gray-500">Products</p>
+              <p className="text-sm text-gray-500">{t('products')}</p>
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-gray-900">{farmer._count.followers}</p>
-              <p className="text-sm text-gray-500">Followers</p>
+              <p className="text-sm text-gray-500">{t('followers')}</p>
             </div>
           </div>
 
           {/* Bio */}
           {farmer.bio && (
-            <p className="mt-4 text-gray-600">{farmer.bio}</p>
+            <div className="mt-4">
+              <p className="text-gray-600">{translatedBio ?? farmer.bio}</p>
+              <TranslateButton
+                texts={[farmer.bio]}
+                onTranslated={([bio]) => setTranslatedBio(bio)}
+                onShowOriginal={() => setTranslatedBio(null)}
+              />
+            </div>
           )}
         </div>
       </div>
@@ -242,13 +253,13 @@ export default function FarmerProfilePage() {
       {/* Products */}
       <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
         <Package className="w-5 h-5 text-green-600" />
-        Products by {farmer.fullName}
+        {t('productsBy', { name: farmer.fullName })}
       </h2>
 
       {products.length === 0 ? (
         <div className="text-center py-12 bg-gray-50 rounded-xl">
           <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500">No products yet</p>
+          <p className="text-gray-500">{t('noProducts')}</p>
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

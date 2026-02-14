@@ -31,7 +31,10 @@
         "getStarted": "Get Started",
         "viewAll": "View All",
         "showMore": "Show More",
-        "showLess": "Show Less"
+        "showLess": "Show Less",
+        "translate": "Translate",
+        "showOriginal": "Show Original",
+        "translatedBy": "Translated by Microsoft"
     },
     "nav": {
         "home": "Home",
@@ -45,7 +48,8 @@
         "signup": "Sign Up",
         "logout": "Logout",
         "dashboard": "Dashboard",
-        "admin": "Admin"
+        "admin": "Admin",
+        "sell": "Sell"
     },
     "auth": {
         "loginTitle": "Welcome Back",
@@ -71,7 +75,8 @@
         "accountCreated": "Account created successfully",
         "resetPassword": "Reset Password",
         "sendResetLink": "Send Reset Link",
-        "backToLogin": "Back to Login"
+        "backToLogin": "Back to Login",
+        "otpPlaceholder": "Enter 6-digit code"
     },
     "home": {
         "heroTitle": "Fresh from Farm to Your Table",
@@ -91,7 +96,27 @@
             "deliveryDesc": "Fresh produce delivered to your door",
             "qualityTitle": "Quality Assured",
             "qualityDesc": "All products are quality checked"
-        }
+        },
+        "heroTitlePart1": "Farm Fresh,",
+        "heroTitleHighlight": "Direct to You",
+        "heroDescription": "Connect directly with local farmers. No middlemen, no markups. Get fresh produce at fair prices while supporting farming communities.",
+        "exploreProducts": "Explore Products",
+        "becomeFarmer": "Become a Farmer",
+        "supportTitle": "Support Farmers",
+        "supportDesc": "Farmers earn 100% of what you pay - no commissions or middlemen fees.",
+        "trustedTitle": "Trusted Quality",
+        "trustedDesc": "Rate and review farmers. Buy from trusted sellers in your community.",
+        "howItWorks": "How It Works",
+        "step1Title": "Browse & Discover",
+        "step1Desc": "Explore products from local farmers. Like, comment, and follow your favorites.",
+        "step2Title": "Order & Pay",
+        "step2Desc": "Add to cart, choose delivery options, and pay securely online.",
+        "step3Title": "Receive & Enjoy",
+        "step3Desc": "Get fresh produce delivered to your door or pick up from the farm.",
+        "ctaTitle": "Ready to Get Started?",
+        "ctaDescription": "Join thousands of customers and farmers already using AgriLink to buy and sell fresh produce.",
+        "createAccount": "Create Account",
+        "browseAsGuest": "Browse as Guest"
     },
     "product": {
         "addToCart": "Add to Cart",
@@ -135,7 +160,24 @@
             "pickup": "Farm Pickup",
             "meetup": "Meetup Point",
             "selectOption": "Select delivery option"
-        }
+        },
+        "productNotFound": "Product not found",
+        "backToFeed": "Back to Feed",
+        "deliveryFee": "Delivery fee",
+        "loginToComment": "to add a comment",
+        "addComment": "Add a comment...",
+        "onlyLeft": "Only {count} left!",
+        "soldOut": "Sold Out",
+        "selectCategory": "Select category",
+        "deliveryRadius": "Delivery Radius (km)",
+        "deliveryFeeLabel": "Delivery Fee",
+        "unit": "Unit",
+        "unitKg": "Kilogram (kg)",
+        "unitG": "Gram (g)",
+        "unitPiece": "Piece",
+        "unitDozen": "Dozen",
+        "unitLitre": "Litre",
+        "unitBundle": "Bundle"
     },
     "cart": {
         "title": "Shopping Cart",
@@ -150,7 +192,9 @@
         "removeItem": "Remove",
         "updateQuantity": "Update Quantity",
         "orderSummary": "Order Summary",
-        "perFarmerNote": "Orders will be placed separately per farmer"
+        "perFarmerNote": "Orders will be placed separately per farmer",
+        "clearCartConfirm": "Clear all items from cart?",
+        "farmersProducts": "{name}'s Products"
     },
     "checkout": {
         "title": "Checkout",
@@ -166,7 +210,21 @@
         "cod": "Cash on Delivery",
         "online": "Online Payment",
         "orderPlaced": "Order Placed Successfully!",
-        "orderConfirmation": "Your order has been confirmed"
+        "orderConfirmation": "Your order has been confirmed",
+        "streetPlaceholder": "House/Flat No., Street, Area",
+        "landmark": "Landmark (Optional)",
+        "landmarkPlaceholder": "Near...",
+        "orderReview": "Order Review",
+        "paymentSummary": "Payment Summary",
+        "delivery": "Delivery",
+        "total": "Total",
+        "pay": "Pay",
+        "mockPaymentNote": "Mock payment - No real charges in development mode",
+        "viewMyOrders": "View My Orders",
+        "continueShopping": "Continue Shopping",
+        "ordersCreated": "{count} orders have been created (one per farmer).",
+        "orderSentToFarmer": "Your order has been sent to the farmer.",
+        "fillAddress": "Please fill in your delivery address"
     },
     "orders": {
         "title": "My Orders",
@@ -186,7 +244,33 @@
             "outForDelivery": "Out for Delivery",
             "delivered": "Delivered",
             "cancelled": "Cancelled"
-        }
+        },
+        "placedOn": "Placed on",
+        "seller": "Seller",
+        "customer": "Customer",
+        "items": "Items",
+        "deliveryAddress": "Delivery Address",
+        "notes": "Notes",
+        "subtotal": "Subtotal",
+        "delivery": "Delivery",
+        "total": "Total",
+        "rateThisOrder": "Rate this Order",
+        "rateExperience": "Rate your experience",
+        "shareExperience": "Share your experience (optional)",
+        "thanks": "Thanks for your feedback!",
+        "orderNotFound": "Order not found",
+        "backToOrders": "Back to Orders",
+        "updateOrderStatus": "Update Order Status",
+        "cancelPendingNote": "Changed your mind? You can cancel while the order is pending.",
+        "stockRestoredNote": "Stock will be restored and the customer will be notified.",
+        "thisCannotBeUndone": "This action cannot be undone.",
+        "confirmOrder": "Confirm Order",
+        "markPacked": "Mark Packed",
+        "outForDeliveryAction": "Out for Delivery",
+        "markDelivered": "Mark Delivered",
+        "noOrdersFound": "No orders found",
+        "orderCancelledSuccess": "Order cancelled successfully",
+        "orderUpdatedSuccess": "Order updated successfully"
     },
     "profile": {
         "title": "Profile",
@@ -230,7 +314,14 @@
         "rating": "Rating",
         "totalSales": "Total Sales",
         "memberSince": "Member Since",
-        "aboutFarmer": "About the Farmer"
+        "aboutFarmer": "About the Farmer",
+        "farmerNotFound": "Farmer not found",
+        "backToFeed": "Back to Feed",
+        "products": "Products",
+        "followers": "Followers",
+        "noProducts": "No products yet",
+        "productsBy": "Products by {name}",
+        "ratings": "ratings"
     },
     "dashboard": {
         "title": "Farmer Dashboard",
@@ -247,7 +338,36 @@
         "pendingOrders": "Pending Orders",
         "recentOrders": "Recent Orders",
         "noProducts": "No products yet. Add your first product!",
-        "noOrders": "No orders yet"
+        "noOrders": "No orders yet",
+        "products": "Products",
+        "revenue": "Revenue",
+        "followers": "Followers",
+        "rating": "Rating",
+        "yourProducts": "Your Products",
+        "viewAll": "View all",
+        "noOrdersFound": "No orders found",
+        "tryDifferentFilter": "Try a different filter",
+        "ordersFromCustomers": "Orders from customers will appear here",
+        "startSelling": "Start selling by adding your first product",
+        "allOrders": "All Orders",
+        "confirmed": "Confirmed",
+        "packed": "Packed",
+        "outForDelivery": "Out for Delivery",
+        "delivered": "Delivered",
+        "cancelled": "Cancelled",
+        "pending": "Pending",
+        "product": "Product",
+        "price": "Price",
+        "stock": "Stock",
+        "status": "Status",
+        "actions": "Actions",
+        "deleteProduct": "Delete Product",
+        "deleteConfirmMessage": "Are you sure you want to delete this product? This action cannot be undone.",
+        "cancelOrder": "Cancel Order",
+        "cancelConfirmMessage": "Are you sure you want to cancel this order? Stock will be restored and the customer will be notified.",
+        "updateOrderStatus": "Update Order Status",
+        "inStock": "in stock",
+        "available": "available"
     },
     "messages": {
         "title": "Messages",
@@ -257,7 +377,10 @@
         "send": "Send",
         "online": "Online",
         "offline": "Offline",
-        "lastSeen": "Last seen"
+        "lastSeen": "Last seen",
+        "startChatting": "Start chatting...",
+        "selectConversation": "Select a conversation to start messaging",
+        "sayHello": "No messages yet. Say hello!"
     },
     "notifications": {
         "title": "Notifications",
@@ -316,7 +439,10 @@
         "browseProducts": "Browse Products",
         "becomeSeller": "Become a Seller",
         "faqs": "FAQs",
-        "allRightsReserved": "All rights reserved"
+        "allRightsReserved": "All rights reserved",
+        "cookies": "Cookies",
+        "tagline": "Connecting farmers directly with consumers. Fresh produce, fair prices, sustainable farming.",
+        "legal": "Legal"
     },
     "errors": {
         "required": "This field is required",
@@ -335,5 +461,67 @@
         "updated": "Updated successfully",
         "orderPlaced": "Order placed successfully",
         "passwordChanged": "Password changed successfully"
+    },
+    "subscription": {
+        "title": "Farmer Subscription",
+        "subtitle": "Subscribe to become a verified farmer and start selling your products on AgriLink",
+        "activeSubscription": "Active Subscription",
+        "activeUntil": "Your subscription is active until {date}",
+        "daysRemaining": "{count} days remaining",
+        "goToDashboard": "Go to Dashboard",
+        "mostPopular": "Most Popular",
+        "subscribeNow": "Subscribe Now",
+        "currentPlan": "Current Plan",
+        "alreadySubscribed": "Already Subscribed",
+        "subscriptionActivated": "Subscription activated! You can now sell products.",
+        "subscriptionFailed": "Subscription failed",
+        "developerMode": "Development Mode",
+        "mockPaymentNote": "Payments are mocked in development. In production, you will be redirected to Razorpay for secure payment processing.",
+        "days": "days"
+    },
+    "about": {
+        "heroTitle": "Connecting Farms to",
+        "heroHighlight": "Families",
+        "heroDescription": "AgriLink is on a mission to revolutionize how fresh produce reaches your table, directly from the farmers who grow it.",
+        "farmers": "Farmers",
+        "products": "Products",
+        "happyCustomers": "Happy Customers",
+        "cities": "Cities",
+        "ourStory": "Our Story",
+        "storyP1": "AgriLink was born from a simple observation: farmers work incredibly hard to grow quality produce, yet receive only a fraction of the final price. Meanwhile, consumers pay premium prices for produce that travels through multiple middlemen, losing freshness along the way.",
+        "storyP2": "We built AgriLink to solve this problem. Our platform connects farmers directly with consumers, cutting out unnecessary intermediaries. Farmers set their own prices and keep more of their earnings. Consumers get fresher produce at better prices, knowing exactly where their food comes from.",
+        "storyP3": "Today, thousands of farmers across India use AgriLink to reach customers they never could before, building sustainable businesses and feeding communities with fresh, local produce.",
+        "ourValues": "Our Values",
+        "directConnectionTitle": "Direct Connection",
+        "directConnectionDesc": "We eliminate middlemen, ensuring farmers get fair prices and consumers get fresh produce.",
+        "sustainabilityTitle": "Sustainability",
+        "sustainabilityDesc": "Supporting local agriculture reduces carbon footprint and promotes sustainable farming.",
+        "farmerEmpowermentTitle": "Farmer Empowerment",
+        "farmerEmpowermentDesc": "We provide tools and reach to help farmers grow their business independently.",
+        "communityFirstTitle": "Community First",
+        "communityFirstDesc": "Building lasting relationships between farmers and consumers through trust and quality.",
+        "ctaTitle": "Join the AgriLink Community",
+        "ctaDescription": "Whether you are a farmer looking to expand your reach or a consumer seeking fresh, local produce, we would love to have you.",
+        "startShopping": "Start Shopping",
+        "becomeSeller": "Become a Seller"
+    },
+    "changePassword": {
+        "title": "Change Password",
+        "subtitle": "Keep your account secure with a strong password",
+        "currentPassword": "Current Password",
+        "newPassword": "New Password",
+        "confirmNewPassword": "Confirm New Password",
+        "requirements": "Password requirements:",
+        "minChars": "At least 8 characters",
+        "uppercase": "One uppercase letter",
+        "number": "One number",
+        "success": "Password Changed!",
+        "redirecting": "Redirecting to settings...",
+        "currentRequired": "Current password is required",
+        "newRequired": "New password is required",
+        "minLength": "Password must be at least 8 characters",
+        "needUppercase": "Password must contain an uppercase letter",
+        "needNumber": "Password must contain a number",
+        "noMatch": "Passwords do not match"
     }
 }

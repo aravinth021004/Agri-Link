@@ -1,10 +1,13 @@
 'use client'
 
+import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Heart, MessageCircle, Share2, MapPin } from 'lucide-react'
 import { formatPrice, formatRelativeTime } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { TranslateButton } from '@/components/translate-button'
+import { useTranslations } from 'next-intl'
 
 interface ProductCardProps {
   product: {
@@ -34,6 +37,9 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, onLike, onAddToCart }: ProductCardProps) {
+  const t = useTranslations('product')
+  const [translatedTitle, setTranslatedTitle] = useState<string | null>(null)
+  const [translatedDesc, setTranslatedDesc] = useState<string | null>(null)
   const mainImage = product.mediaUrls?.[0] || '/placeholder.jpg'
   const price = typeof product.price === 'string' ? parseFloat(product.price) : product.price
 
@@ -86,13 +92,13 @@ export function ProductCard({ product, onLike, onAddToCart }: ProductCardProps) 
           />
           {product.quantity <= 5 && product.quantity > 0 && (
             <span className="absolute top-2 right-2 bg-yellow-500 text-black text-xs px-2 py-1 rounded-full font-medium">
-              Only {product.quantity} left!
+              {t('onlyLeft', { count: product.quantity })}
             </span>
           )}
           {product.quantity === 0 && (
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
               <span className="bg-red-500 text-white px-3 py-1 rounded-full font-medium">
-                Sold Out
+                {t('soldOut')}
               </span>
             </div>
           )}
@@ -123,12 +129,23 @@ export function ProductCard({ product, onLike, onAddToCart }: ProductCardProps) 
       <div className="p-3">
         <Link href={`/products/${product.id}`}>
           <h3 className="font-semibold text-gray-900 truncate hover:text-green-600">
-            {product.title}
+            {translatedTitle ?? product.title}
           </h3>
         </Link>
         <p className="text-sm text-gray-500 mt-1 line-clamp-2">
-          {product.description}
+          {translatedDesc ?? product.description}
         </p>
+        <TranslateButton
+          texts={[product.title, product.description]}
+          onTranslated={([title, desc]) => {
+            setTranslatedTitle(title)
+            setTranslatedDesc(desc)
+          }}
+          onShowOriginal={() => {
+            setTranslatedTitle(null)
+            setTranslatedDesc(null)
+          }}
+        />
         <div className="flex items-center justify-between mt-3">
           <div>
             <span className="text-lg font-bold text-green-600">
@@ -141,11 +158,11 @@ export function ProductCard({ product, onLike, onAddToCart }: ProductCardProps) 
             onClick={onAddToCart}
             disabled={product.quantity === 0}
           >
-            Add to Cart
+            {t('addToCart')}
           </Button>
         </div>
         <p className="text-xs text-gray-400 mt-2">
-          Category: {product.category.name}
+          {t('productCategory')}: {product.category.name}
         </p>
       </div>
     </div>

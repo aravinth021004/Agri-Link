@@ -10,6 +10,7 @@ import { formatPrice, formatDate } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { useGlobalToast } from '@/components/toast-provider'
+import { useTranslations } from 'next-intl'
 
 interface Product {
   id: string
@@ -52,6 +53,8 @@ export default function DashboardPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const { showToast } = useGlobalToast()
+  const t = useTranslations('dashboard')
+  const tOrders = useTranslations('orders')
   const [products, setProducts] = useState<Product[]>([])
   const [orders, setOrders] = useState<Order[]>([])
   const [stats, setStats] = useState<Stats>({
@@ -134,7 +137,7 @@ export default function DashboardPage() {
         body: JSON.stringify({ status: newStatus }),
       })
       if (res.ok) {
-        showToast(`Order ${newStatus === 'CANCELLED' ? 'cancelled' : 'updated'} successfully`, 'success')
+        showToast(newStatus === 'CANCELLED' ? tOrders('orderCancelledSuccess') : tOrders('orderUpdatedSuccess'), 'success')
       } else {
         const data = await res.json()
         showToast(data.error || 'Failed to update order', 'error')
@@ -178,10 +181,10 @@ export default function DashboardPage() {
   }
 
   const statusActions: Record<string, { next: string; label: string }> = {
-    PENDING: { next: 'CONFIRMED', label: 'Confirm Order' },
-    CONFIRMED: { next: 'PACKED', label: 'Mark Packed' },
-    PACKED: { next: 'OUT_FOR_DELIVERY', label: 'Out for Delivery' },
-    OUT_FOR_DELIVERY: { next: 'DELIVERED', label: 'Mark Delivered' },
+    PENDING: { next: 'CONFIRMED', label: 'confirmOrder' },
+    CONFIRMED: { next: 'PACKED', label: 'markPacked' },
+    PACKED: { next: 'OUT_FOR_DELIVERY', label: 'outForDeliveryAction' },
+    OUT_FOR_DELIVERY: { next: 'DELIVERED', label: 'markDelivered' },
   }
 
   const statusIcon: Record<string, React.ElementType> = {
@@ -197,14 +200,16 @@ export default function DashboardPage() {
     ['PENDING', 'CONFIRMED', 'PACKED', 'OUT_FOR_DELIVERY'].includes(orderStatus)
 
   const orderFilterOptions = [
-    { value: '', label: 'All Orders' },
-    { value: 'PENDING', label: 'Pending' },
-    { value: 'CONFIRMED', label: 'Confirmed' },
-    { value: 'PACKED', label: 'Packed' },
-    { value: 'OUT_FOR_DELIVERY', label: 'Out for Delivery' },
-    { value: 'DELIVERED', label: 'Delivered' },
-    { value: 'CANCELLED', label: 'Cancelled' },
+    { value: '', label: t('allOrders') },
+    { value: 'PENDING', label: t('pending') },
+    { value: 'CONFIRMED', label: t('confirmed') },
+    { value: 'PACKED', label: t('packed') },
+    { value: 'OUT_FOR_DELIVERY', label: t('outForDelivery') },
+    { value: 'DELIVERED', label: t('delivered') },
+    { value: 'CANCELLED', label: t('cancelled') },
   ]
+
+  const tabLabels: Record<string, string> = { overview: t('overview'), products: t('myProducts'), orders: t('orders') }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -213,8 +218,8 @@ export default function DashboardPage() {
         isOpen={deleteConfirm.isOpen}
         onClose={() => setDeleteConfirm({ isOpen: false, productId: '', productTitle: '' })}
         onConfirm={() => deleteProduct(deleteConfirm.productId)}
-        title="Delete Product"
-        message={`Are you sure you want to delete "${deleteConfirm.productTitle}"? This action cannot be undone.`}
+        title={t('deleteProduct')}
+        message={t('deleteConfirmMessage')}
         confirmLabel="Delete"
         variant="danger"
         isLoading={isActionLoading}
@@ -225,9 +230,9 @@ export default function DashboardPage() {
         isOpen={cancelConfirm.isOpen}
         onClose={() => setCancelConfirm({ isOpen: false, orderId: '', orderNumber: '' })}
         onConfirm={() => updateOrderStatus(cancelConfirm.orderId, 'CANCELLED')}
-        title="Cancel Order"
-        message={`Are you sure you want to cancel Order #${cancelConfirm.orderNumber}? Stock will be restored and the customer will be notified.`}
-        confirmLabel="Cancel Order"
+        title={t('cancelOrder')}
+        message={t('cancelConfirmMessage')}
+        confirmLabel={t('cancelOrder')}
         variant="danger"
         isLoading={isActionLoading}
       />
@@ -237,18 +242,18 @@ export default function DashboardPage() {
         isOpen={statusConfirm.isOpen}
         onClose={() => setStatusConfirm({ isOpen: false, orderId: '', orderNumber: '', newStatus: '', label: '' })}
         onConfirm={() => updateOrderStatus(statusConfirm.orderId, statusConfirm.newStatus)}
-        title="Update Order Status"
-        message={`Mark Order #${statusConfirm.orderNumber} as "${statusConfirm.label}"?`}
-        confirmLabel={statusConfirm.label}
+        title={t('updateOrderStatus')}
+        message={`${tOrders('orderNumber')} #${statusConfirm.orderNumber} → ${statusConfirm.label ? tOrders(statusConfirm.label) : ''}`}
+        confirmLabel={statusConfirm.label ? tOrders(statusConfirm.label) : ''}
         isLoading={isActionLoading}
       />
 
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Farmer Dashboard</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
         <Link href="/products/create">
           <Button>
             <Plus className="w-4 h-4 mr-2" />
-            Add Product
+            {t('addProduct')}
           </Button>
         </Link>
       </div>
@@ -258,27 +263,27 @@ export default function DashboardPage() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
           <Package className="w-8 h-8 text-green-600 mb-2" />
           <p className="text-2xl font-bold text-gray-900">{stats.totalProducts}</p>
-          <p className="text-sm text-gray-500">Products</p>
+          <p className="text-sm text-gray-500">{t('products')}</p>
         </div>
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
           <ShoppingBag className="w-8 h-8 text-blue-600 mb-2" />
           <p className="text-2xl font-bold text-gray-900">{stats.totalOrders}</p>
-          <p className="text-sm text-gray-500">Orders</p>
+          <p className="text-sm text-gray-500">{t('orders')}</p>
         </div>
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
           <TrendingUp className="w-8 h-8 text-purple-600 mb-2" />
           <p className="text-2xl font-bold text-gray-900">{formatPrice(stats.totalRevenue)}</p>
-          <p className="text-sm text-gray-500">Revenue</p>
+          <p className="text-sm text-gray-500">{t('revenue')}</p>
         </div>
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
           <Users className="w-8 h-8 text-orange-600 mb-2" />
           <p className="text-2xl font-bold text-gray-900">{stats.followers}</p>
-          <p className="text-sm text-gray-500">Followers</p>
+          <p className="text-sm text-gray-500">{t('followers')}</p>
         </div>
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
           <Star className="w-8 h-8 text-yellow-500 mb-2" />
           <p className="text-2xl font-bold text-gray-900">{stats.averageRating.toFixed(1)}</p>
-          <p className="text-sm text-gray-500">Rating</p>
+          <p className="text-sm text-gray-500">{t('rating')}</p>
         </div>
       </div>
 
@@ -294,7 +299,7 @@ export default function DashboardPage() {
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            {tabLabels[tab]}
           </button>
         ))}
       </div>
@@ -305,9 +310,9 @@ export default function DashboardPage() {
           {/* Recent Orders */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-bold text-gray-900">Recent Orders</h2>
+              <h2 className="font-bold text-gray-900">{t('recentOrders')}</h2>
               <button onClick={() => setActiveTab('orders')} className="text-sm text-green-600 hover:underline">
-                View all
+                {t('viewAll')}
               </button>
             </div>
             <div className="space-y-3">
@@ -337,7 +342,7 @@ export default function DashboardPage() {
                 </Link>
               ))}
               {orders.length === 0 && (
-                <p className="text-gray-500 text-center py-4">No orders yet</p>
+                <p className="text-gray-500 text-center py-4">{t('noOrders')}</p>
               )}
             </div>
           </div>
@@ -345,9 +350,9 @@ export default function DashboardPage() {
           {/* Recent Products */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-bold text-gray-900">Your Products</h2>
+              <h2 className="font-bold text-gray-900">{t('yourProducts')}</h2>
               <button onClick={() => setActiveTab('products')} className="text-sm text-green-600 hover:underline">
-                View all
+                {t('viewAll')}
               </button>
             </div>
             <div className="space-y-3">
@@ -367,7 +372,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm truncate">{product.title}</p>
-                    <p className="text-xs text-gray-500">{product.quantity} {product.unit} available</p>
+                    <p className="text-xs text-gray-500">{product.quantity} {product.unit} {t('available')}</p>
                   </div>
                   <span className="font-medium text-green-600">{formatPrice(product.price)}</span>
                 </Link>
@@ -386,8 +391,8 @@ export default function DashboardPage() {
           {products.length === 0 ? (
             <div className="text-center py-16 bg-white rounded-xl shadow-sm border border-gray-100">
               <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">No products yet</h2>
-              <p className="text-gray-500 mb-6">Start selling by adding your first product</p>
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">{t('noProducts')}</h2>
+              <p className="text-gray-500 mb-6">{t('startSelling')}</p>
               <Link href="/products/create">
                 <Button><Plus className="w-4 h-4 mr-2" /> Add Product</Button>
               </Link>
@@ -399,11 +404,11 @@ export default function DashboardPage() {
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stock</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('product')}</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('price')}</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('stock')}</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('status')}</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('actions')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -469,7 +474,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm truncate">{product.title}</p>
-                      <p className="text-xs text-gray-500">{formatPrice(product.price)}/{product.unit} • {product.quantity} in stock</p>
+                      <p className="text-xs text-gray-500">{formatPrice(product.price)}/{product.unit} • {product.quantity} {t('inStock')}</p>
                       <span className={`inline-block mt-1 px-2 py-0.5 text-xs rounded-full ${
                         product.status === 'ACTIVE' ? 'bg-green-100 text-green-700' :
                         product.status === 'SOLD_OUT' ? 'bg-red-100 text-red-700' :
@@ -518,8 +523,8 @@ export default function DashboardPage() {
           {orders.length === 0 ? (
             <div className="text-center py-16 bg-white rounded-xl shadow-sm border border-gray-100">
               <ShoppingBag className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">No orders found</h2>
-              <p className="text-gray-500">{orderFilter ? 'Try a different filter' : 'Orders from customers will appear here'}</p>
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">{t('noOrdersFound')}</h2>
+              <p className="text-gray-500">{orderFilter ? t('tryDifferentFilter') : t('ordersFromCustomers')}</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -532,7 +537,7 @@ export default function DashboardPage() {
                     <Link href={`/orders/${order.id}`} className="block p-4">
                       <div className="flex items-start justify-between mb-3">
                         <div>
-                          <p className="font-semibold text-gray-900">Order #{order.orderNumber}</p>
+                          <p className="font-semibold text-gray-900">{tOrders('orderNumber')} #{order.orderNumber}</p>
                           <p className="text-sm text-gray-500">{order.customer.fullName} • {formatDate(order.createdAt)}</p>
                         </div>
                         <div className="flex items-center gap-2">
@@ -584,7 +589,7 @@ export default function DashboardPage() {
                             {order.status === 'CONFIRMED' && <Package className="w-4 h-4 mr-1" />}
                             {order.status === 'PACKED' && <Truck className="w-4 h-4 mr-1" />}
                             {order.status === 'OUT_FOR_DELIVERY' && <CheckCircle className="w-4 h-4 mr-1" />}
-                            {action.label}
+                            {tOrders(action.label)}
                           </Button>
                         )}
                         {canCancel(order.status) && (

@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { Heart, Loader2 } from 'lucide-react'
 import { ProductCard } from '@/components/product-card'
+import { useTranslations } from 'next-intl'
 
 interface Product {
   id: string
@@ -32,6 +33,7 @@ interface Product {
 export default function WishlistPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const t = useTranslations('wishlist')
   const [products, setProducts] = useState<Product[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -90,18 +92,18 @@ export default function WishlistPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">My Wishlist</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">{t('title')}</h1>
 
       {products.length === 0 ? (
         <div className="text-center py-16">
           <Heart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Your wishlist is empty</h2>
-          <p className="text-gray-500 mb-6">Save products you like by tapping the heart icon</p>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">{t('empty')}</h2>
+          <p className="text-gray-500 mb-6">{t('emptySubtitle')}</p>
           <button
             onClick={() => router.push('/feed')}
             className="text-green-600 font-medium hover:text-green-700"
           >
-            Browse Products
+            {t('browseProducts')}
           </button>
         </div>
       ) : (
