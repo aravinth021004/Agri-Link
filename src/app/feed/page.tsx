@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl'
 import { Loader2, Filter, X } from 'lucide-react'
 import { ProductCard } from '@/components/product-card'
 import { Button } from '@/components/ui/button'
+import { useGlobalToast } from '@/components/toast-provider'
 
 interface Product {
   id: string
@@ -44,7 +45,9 @@ export default function FeedPage() {
   const tSearch = useTranslations('search')
   const tCommon = useTranslations('common')
   const tCategories = useTranslations('categories')
+  const tProduct = useTranslations('product')
   const { data: session } = useSession()
+  const { showToast } = useGlobalToast()
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [page, setPage] = useState(1)
@@ -135,22 +138,25 @@ export default function FeedPage() {
     }
   }
 
-  const handleAddToCart = async (product: Product) => {
+  const handleAddToCart = async (product: Product, quantity: number) => {
     if (!session) {
       window.location.href = '/login'
       return
     }
 
     try {
-      await fetch('/api/cart', {
+      const response = await fetch('/api/cart', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           productId: product.id,
-          quantity: 1,
+          quantity,
           deliveryOption: 'HOME_DELIVERY',
         }),
       })
+      if (response.ok) {
+        showToast(tProduct('addedToCart'), 'success')
+      }
     } catch (error) {
       console.error('Failed to add to cart:', error)
     }
@@ -272,7 +278,7 @@ export default function FeedPage() {
                 key={product.id}
                 product={product}
                 onLike={() => handleLike(product.id)}
-                onAddToCart={() => handleAddToCart(product)}
+                onAddToCart={(qty) => handleAddToCart(product, qty)}
               />
             ))}
           </div>

@@ -9,6 +9,7 @@ import { MapPin, Users, Star, Package, MessageCircle, Loader2 } from 'lucide-rea
 import { ProductCard } from '@/components/product-card'
 import { Button } from '@/components/ui/button'
 import { TranslateButton } from '@/components/translate-button'
+import { useGlobalToast } from '@/components/toast-provider'
 import { useTranslations } from 'next-intl'
 
 interface Farmer {
@@ -58,6 +59,8 @@ export default function FarmerProfilePage() {
   const [isFollowLoading, setIsFollowLoading] = useState(false)
   const [translatedBio, setTranslatedBio] = useState<string | null>(null)
   const t = useTranslations('farmer')
+  const tProduct = useTranslations('product')
+  const { showToast } = useGlobalToast()
 
   useEffect(() => {
     fetchFarmerData()
@@ -132,21 +135,24 @@ export default function FarmerProfilePage() {
     }
   }
 
-  const handleAddToCart = async (product: Product) => {
+  const handleAddToCart = async (product: Product, quantity: number) => {
     if (!session) {
       window.location.href = '/login'
       return
     }
     try {
-      await fetch('/api/cart', {
+      const response = await fetch('/api/cart', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           productId: product.id,
-          quantity: 1,
+          quantity,
           deliveryOption: 'HOME_DELIVERY',
         }),
       })
+      if (response.ok) {
+        showToast(tProduct('addedToCart'), 'success')
+      }
     } catch (error) {
       console.error('Failed to add to cart:', error)
     }
@@ -268,7 +274,7 @@ export default function FarmerProfilePage() {
               key={product.id}
               product={product}
               onLike={() => handleLike(product.id)}
-              onAddToCart={() => handleAddToCart(product)}
+              onAddToCart={(qty) => handleAddToCart(product, qty)}
             />
           ))}
         </div>

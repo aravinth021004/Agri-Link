@@ -9,6 +9,8 @@ import { useTranslations } from 'next-intl'
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, Loader2 } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { useGlobalToast } from '@/components/toast-provider'
 
 interface CartItem {
   id: string
@@ -40,12 +42,18 @@ interface CartGroup {
 
 export default function CartPage() {
   const t = useTranslations('cart')
+  const tCommon = useTranslations('common')
   const { data: session, status } = useSession()
   const router = useRouter()
+  const { showToast } = useGlobalToast()
   const [cartGroups, setCartGroups] = useState<CartGroup[]>([])
   const [grandTotal, setGrandTotal] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [updatingItems, setUpdatingItems] = useState<Set<string>>(new Set())
+  const [clearConfirm, setClearConfirm] = useState(false)
+  const [removeConfirm, setRemoveConfirm] = useState<{ isOpen: boolean; itemId: string; title: string }>(
+    { isOpen: false, itemId: '', title: '' }
+  )
 
   const fetchCart = useCallback(async () => {
     try {
@@ -91,9 +99,11 @@ export default function CartPage() {
   }
 
   const removeItem = async (itemId: string) => {
+    setRemoveConfirm({ isOpen: false, itemId: '', title: '' })
     setUpdatingItems(prev => new Set(prev).add(itemId))
     try {
       await fetch(`/api/cart/${itemId}`, { method: 'DELETE' })
+      showToast(t('removeItem'), 'success')
       fetchCart()
     } catch (error) {
       console.error('Failed to remove item:', error)
@@ -107,9 +117,10 @@ export default function CartPage() {
   }
 
   const clearCart = async () => {
-    if (!confirm(t('clearCartConfirm'))) return
+    setClearConfirm(false)
     try {
       await fetch('/api/cart', { method: 'DELETE' })
+      showToast(t('clearCart'), 'success')
       fetchCart()
     } catch (error) {
       console.error('Failed to clear cart:', error)
@@ -130,10 +141,34 @@ export default function CartPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      {/* Clear Cart Confirmation */}
+      <ConfirmDialog
+        isOpen={clearConfirm}
+        onClose={() => setClearConfirm(false)}
+        onConfirm={clearCart}
+        title={t('clearCart')}
+        message={t('clearCartConfirm')}
+        confirmLabel={t('clearCart')}
+        cancelLabel={tCommon('cancel')}
+        variant="danger"
+      />
+
+      {/* Remove Item Confirmation */}
+      <ConfirmDialog
+        isOpen={removeConfirm.isOpen}
+        onClose={() => setRemoveConfirm({ isOpen: false, itemId: '', title: '' })}
+        onConfirm={() => removeItem(removeConfirm.itemId)}
+        title={t('removeItem')}
+        message={removeConfirm.title}
+        confirmLabel={t('removeItem')}
+        cancelLabel={tCommon('cancel')}
+        variant="danger"
+      />
+
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
         {cartGroups.length > 0 && (
-          <button onClick={clearCart} className="text-sm text-red-500 hover:text-red-600">
+          <button onClick={() => setClearConfirm(true)} className="text-sm text-red-500 hover:text-red-600">
             {t('clearCart')}
           </button>
         )}
@@ -209,7 +244,7 @@ export default function CartPage() {
                           {formatPrice(item.product.price * item.quantity)}
                         </span>
                         <button
-                          onClick={() => removeItem(item.id)}
+                          onClick={() => setRemoveConfirm({ isOpen: true, itemId: item.id, title: item.product.title })}
                           disabled={updatingItems.has(item.id)}
                           className="text-red-500 hover:text-red-600 p-1"
                         >

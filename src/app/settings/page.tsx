@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Settings, Bell, Languages, LogOut, Loader2, ChevronRight, Save, Lock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { useLocale } from '@/hooks/use-locale'
 import { type Locale } from '@/i18n/config'
 import { useGlobalToast } from '@/components/toast-provider'
@@ -25,6 +26,7 @@ export default function SettingsPage() {
   })
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [logoutConfirm, setLogoutConfirm] = useState(false)
 
   useEffect(() => {
     setCurrentLocale(getLocale())
@@ -59,9 +61,8 @@ export default function SettingsPage() {
   }
 
   const handleLogout = async () => {
-    if (confirm(t('logoutConfirm'))) {
-      await signOut({ callbackUrl: '/' })
-    }
+    setLogoutConfirm(false)
+    await signOut({ callbackUrl: '/' })
   }
 
   if (status === 'loading' || isLoading) {
@@ -74,6 +75,16 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <ConfirmDialog
+        isOpen={logoutConfirm}
+        onClose={() => setLogoutConfirm(false)}
+        onConfirm={handleLogout}
+        title={t('logout')}
+        message={t('logoutConfirm')}
+        confirmLabel={t('logout')}
+        variant="danger"
+      />
+
       <h1 className="text-2xl font-bold text-gray-900 mb-6">{t('title')}</h1>
 
       <div className="space-y-6">
@@ -185,7 +196,7 @@ export default function SettingsPage() {
             <ChevronRight className="w-5 h-5 text-gray-400" />
           </button>
           <button
-            onClick={handleLogout}
+            onClick={() => setLogoutConfirm(true)}
             className="w-full flex items-center justify-between p-4 hover:bg-red-50 transition border-t border-gray-100"
           >
             <div className="flex items-center gap-3">

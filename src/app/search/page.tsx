@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl'
 import { ProductCard } from '@/components/product-card'
 import { Button } from '@/components/ui/button'
 import { useSession } from 'next-auth/react'
+import { useGlobalToast } from '@/components/toast-provider'
 
 interface Product {
   id: string
@@ -41,6 +42,8 @@ export default function SearchPage() {
   const tCategories = useTranslations('categories')
   const tCommon = useTranslations('common')
   const { data: session } = useSession()
+  const { showToast } = useGlobalToast()
+  const tProduct = useTranslations('product')
   const [query, setQuery] = useState('')
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
@@ -115,21 +118,24 @@ export default function SearchPage() {
     }
   }
 
-  const handleAddToCart = async (product: Product) => {
+  const handleAddToCart = async (product: Product, quantity: number) => {
     if (!session) {
       window.location.href = '/login'
       return
     }
     try {
-      await fetch('/api/cart', {
+      const response = await fetch('/api/cart', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           productId: product.id,
-          quantity: 1,
+          quantity,
           deliveryOption: 'HOME_DELIVERY',
         }),
       })
+      if (response.ok) {
+        showToast(tProduct('addedToCart'), 'success')
+      }
     } catch (error) {
       console.error('Failed to add to cart:', error)
     }
@@ -271,7 +277,7 @@ export default function SearchPage() {
               key={product.id}
               product={product}
               onLike={() => handleLike(product.id)}
-              onAddToCart={() => handleAddToCart(product)}
+              onAddToCart={(qty) => handleAddToCart(product, qty)}
             />
           ))}
         </div>

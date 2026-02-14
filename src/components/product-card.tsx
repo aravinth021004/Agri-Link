@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Heart, MessageCircle, Share2, MapPin } from 'lucide-react'
+import { Heart, MessageCircle, Share2, MapPin, Plus, Minus, ShoppingCart } from 'lucide-react'
 import { formatPrice, formatRelativeTime } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { TranslateButton } from '@/components/translate-button'
@@ -33,13 +33,15 @@ interface ProductCardProps {
     }
   }
   onLike?: () => void
-  onAddToCart?: () => void
+  onAddToCart?: (quantity: number) => void
 }
 
 export function ProductCard({ product, onLike, onAddToCart }: ProductCardProps) {
   const t = useTranslations('product')
   const [translatedTitle, setTranslatedTitle] = useState<string | null>(null)
   const [translatedDesc, setTranslatedDesc] = useState<string | null>(null)
+  const [showQtyPicker, setShowQtyPicker] = useState(false)
+  const [qty, setQty] = useState(1)
   const mainImage = product.mediaUrls?.[0] || '/placeholder.jpg'
   const price = typeof product.price === 'string' ? parseFloat(product.price) : product.price
 
@@ -153,13 +155,43 @@ export function ProductCard({ product, onLike, onAddToCart }: ProductCardProps) 
             </span>
             <span className="text-sm text-gray-500 ml-1">/ {product.unit}</span>
           </div>
-          <Button
-            size="sm"
-            onClick={onAddToCart}
-            disabled={product.quantity === 0}
-          >
-            {t('addToCart')}
-          </Button>
+          {showQtyPicker ? (
+            <div className="flex items-center gap-1">
+              <div className="flex items-center border border-gray-200 rounded-lg">
+                <button
+                  onClick={() => setQty(Math.max(1, qty - 1))}
+                  className="p-1 text-gray-500 hover:text-gray-700"
+                >
+                  <Minus className="w-3.5 h-3.5" />
+                </button>
+                <span className="px-2 text-sm font-medium min-w-[24px] text-center">{qty}</span>
+                <button
+                  onClick={() => setQty(Math.min(product.quantity, qty + 1))}
+                  className="p-1 text-gray-500 hover:text-gray-700"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <Button
+                size="sm"
+                onClick={() => {
+                  onAddToCart?.(qty)
+                  setShowQtyPicker(false)
+                  setQty(1)
+                }}
+              >
+                <ShoppingCart className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+          ) : (
+            <Button
+              size="sm"
+              onClick={() => setShowQtyPicker(true)}
+              disabled={product.quantity === 0}
+            >
+              {t('addToCart')}
+            </Button>
+          )}
         </div>
         <p className="text-xs text-gray-400 mt-2">
           {t('productCategory')}: {product.category.name}

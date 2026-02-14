@@ -7,6 +7,8 @@ import { useSession } from 'next-auth/react'
 import { ArrowLeft, Loader2, Grid, List } from 'lucide-react'
 import { ProductCard } from '@/components/product-card'
 import { Button } from '@/components/ui/button'
+import { useGlobalToast } from '@/components/toast-provider'
+import { useTranslations } from 'next-intl'
 
 interface Category {
   id: string
@@ -41,6 +43,8 @@ interface Product {
 export default function CategoryPage() {
   const params = useParams()
   const { data: session } = useSession()
+  const { showToast } = useGlobalToast()
+  const tProduct = useTranslations('product')
   const [category, setCategory] = useState<Category | null>(null)
   const [products, setProducts] = useState<Product[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -88,21 +92,24 @@ export default function CategoryPage() {
     }
   }
 
-  const handleAddToCart = async (product: Product) => {
+  const handleAddToCart = async (product: Product, quantity: number) => {
     if (!session) {
       window.location.href = '/login'
       return
     }
     try {
-      await fetch('/api/cart', {
+      const response = await fetch('/api/cart', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           productId: product.id,
-          quantity: 1,
+          quantity,
           deliveryOption: 'HOME_DELIVERY',
         }),
       })
+      if (response.ok) {
+        showToast(tProduct('addedToCart'), 'success')
+      }
     } catch (error) {
       console.error('Failed to add to cart:', error)
     }
@@ -188,7 +195,7 @@ export default function CategoryPage() {
               key={product.id}
               product={product}
               onLike={() => handleLike(product.id)}
-              onAddToCart={() => handleAddToCart(product)}
+              onAddToCart={(qty) => handleAddToCart(product, qty)}
             />
           ))}
         </div>
