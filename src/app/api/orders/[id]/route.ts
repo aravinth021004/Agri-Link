@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma'
 import { authOptions } from '@/lib/auth'
 import { updateOrderStatusSchema } from '@/lib/validations'
 import { createNotification } from '@/lib/notifications'
+import { sendEmail, orderStatusEmail } from '@/lib/email'
 
 interface Params {
   params: Promise<{ id: string }>
@@ -112,8 +113,12 @@ export async function PUT(request: NextRequest, { params }: Params) {
       )
     }
 
-    // Only farmer or admin can update order status
-    if (order.farmerId !== session.user.id && session.user.role !== 'ADMIN') {
+    // Only farmer, admin, or the customer (for cancellation) can update
+    const isFarmer = order.farmerId === session.user.id
+    const isCustomer = order.customerId === session.user.id
+    const isAdmin = session.user.role === 'ADMIN'
+
+    if (!isFarmer && !isCustomer && !isAdmin) {
       return NextResponse.json(
         { error: 'Forbidden' },
         { status: 403 }
@@ -131,6 +136,16 @@ export async function PUT(request: NextRequest, { params }: Params) {
     }
 
     const { status } = result.data
+
+    // Customers can only cancel PENDING orders
+    if (isCustomer && !isFarmer && !isAdmin) {
+      if (status !== 'CANCELLED' || order.status !== 'PENDING') {
+        return NextResponse.json(
+          { error: 'You can only cancel orders that are still pending' },
+          { status: 400 }
+        )
+      }
+    }
 
     // Validate status transition
     const validTransitions: Record<string, string[]> = {
@@ -161,6 +176,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
             id: true,
             fullName: true,
             phone: true,
+            email: true,
           },
         },
         items: {
@@ -184,6 +200,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
       CANCELLED: 'Your order has been cancelled',
     }
 
+    // Notify the customer about status change
     createNotification({
       userId: order.customerId,
       type: 'ORDER_UPDATE',
@@ -191,6 +208,36 @@ export async function PUT(request: NextRequest, { params }: Params) {
       message: statusMessages[status] || `Order status changed to ${status}`,
       link: `/orders/${order.id}`,
     })
+
+    // Send status email to customer (fire-and-forget)
+    if (updatedOrder.customer.email) {
+      const email = orderStatusEmail(order.orderNumber, status, order.id)
+      sendEmail({ to: updatedOrder.customer.email, ...email }).catch(() => {})
+    }
+
+    // If customer cancelled, also notify the farmer
+    if (status === 'CANCELLED' && isCustomer) {
+      createNotification({
+        userId: order.farmerId,
+        type: 'ORDER_UPDATE',
+        title: `Order #${order.orderNumber} cancelled`,
+        message: 'The customer has cancelled this order',
+        link: `/orders/${order.id}`,
+      })
+    }
+
+    // Restore product quantities on cancellation
+    if (status === 'CANCELLED') {
+      const orderItems = await prisma.orderItem.findMany({
+        where: { orderId: order.id },
+      })
+      for (const item of orderItems) {
+        await prisma.product.update({
+          where: { id: item.productId },
+          data: { quantity: { increment: item.quantity } },
+        })
+      }
+    }
 
     return NextResponse.json(updatedOrder)
   } catch (error) {

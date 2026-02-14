@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma'
 import { authOptions } from '@/lib/auth'
 import { createOrderSchema } from '@/lib/validations'
 import { generateOrderNumber } from '@/lib/utils'
+import { sendEmail, orderConfirmationEmail } from '@/lib/email'
 
 // GET user's orders
 export async function GET(request: NextRequest) {
@@ -246,6 +247,18 @@ export async function POST(request: NextRequest) {
       console.log(`  Order #${order.orderNumber} - ₹${order.totalAmount}`)
     })
     console.log('='.repeat(50))
+
+    // Send order confirmation emails (fire-and-forget)
+    if (session.user.email) {
+      for (const order of orders) {
+        const items = order.items.map(
+          (i: { product: { title: string }; quantity: number; unitPrice: unknown }) =>
+            `${i.product.title} x${i.quantity} - ₹${Number(i.unitPrice) * i.quantity}`
+        )
+        const email = orderConfirmationEmail(order.orderNumber, items, `₹${order.totalAmount}`)
+        sendEmail({ to: session.user.email, ...email }).catch(() => {})
+      }
+    }
 
     return NextResponse.json({
       message: 'Orders created successfully',

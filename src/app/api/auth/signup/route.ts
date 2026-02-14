@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs'
 import prisma from '@/lib/prisma'
 import { signupSchema } from '@/lib/validations'
 import { generateOTP } from '@/lib/utils'
+import { sendEmail, welcomeEmail } from '@/lib/email'
 
 export async function POST(request: NextRequest) {
   try {
@@ -73,6 +74,10 @@ export async function POST(request: NextRequest) {
     console.log(`📧 OTP for ${email}: ${otp}`)
     console.log(`⏰ Expires at: ${expiresAt.toLocaleString()}`)
     console.log('='.repeat(50))
+
+    // Send welcome email (fire-and-forget)
+    const welcome = welcomeEmail(fullName)
+    sendEmail({ to: email, ...welcome }).catch(() => {})
 
     return NextResponse.json({
       message: 'User created successfully. Please verify your email.',
