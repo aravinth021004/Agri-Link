@@ -16,25 +16,17 @@ export async function GET() {
     }
 
     const now = new Date()
-    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
 
     const [
       totalUsers,
-      totalFarmers,
-      totalCustomers,
       activeSubscriptions,
-      totalProducts,
       totalOrders,
       revenueData,
-      newUsersThisMonth,
-      ordersThisWeek,
-      topFarmers,
+      usersByRole,
+      recentOrders,
     ] = await Promise.all([
-      // User counts
+      // Total users count
       prisma.user.count(),
-      prisma.user.count({ where: { role: 'FARMER' } }),
-      prisma.user.count({ where: { role: 'CUSTOMER' } }),
       
       // Active subscriptions
       prisma.subscription.count({
@@ -44,78 +36,44 @@ export async function GET() {
         },
       }),
       
-      // Products
-      prisma.product.count({ where: { status: 'ACTIVE' } }),
-      
-      // Orders
+      // Total orders
       prisma.order.count(),
       
-      // Revenue (sum of subscription amounts)
-      prisma.subscription.aggregate({
-        _sum: { amount: true },
-        where: { status: 'ACTIVE' },
+      // Total revenue (sum of all order amounts)
+      prisma.order.aggregate({
+        _sum: { totalAmount: true },
       }),
       
-      // New users this month
-      prisma.user.count({
-        where: { createdAt: { gte: thirtyDaysAgo } },
+      // Users grouped by role
+      prisma.user.groupBy({
+        by: ['role'],
+        _count: { role: true },
       }),
       
-      // Orders this week
-      prisma.order.count({
-        where: { createdAt: { gte: sevenDaysAgo } },
-      }),
-      
-      // Top farmers by orders
-      prisma.user.findMany({
-        where: { role: 'FARMER' },
+      // Recent orders
+      prisma.order.findMany({
         select: {
           id: true,
-          fullName: true,
-          profileImage: true,
-          _count: {
-            select: { farmerOrders: true },
-          },
+          orderNumber: true,
+          totalAmount: true,
+          status: true,
+          createdAt: true,
         },
-        orderBy: {
-          farmerOrders: { _count: 'desc' },
-        },
+        orderBy: { createdAt: 'desc' },
         take: 5,
       }),
     ])
 
-    // Order status distribution
-    const orderStatusDistribution = await prisma.order.groupBy({
-      by: ['status'],
-      _count: { status: true },
-    })
-
     return NextResponse.json({
-      users: {
-        total: totalUsers,
-        farmers: totalFarmers,
-        customers: totalCustomers,
-        newThisMonth: newUsersThisMonth,
-      },
-      subscriptions: {
-        active: activeSubscriptions,
-        revenue: revenueData._sum.amount || 0,
-      },
-      products: {
-        active: totalProducts,
-      },
-      orders: {
-        total: totalOrders,
-        thisWeek: ordersThisWeek,
-        statusDistribution: orderStatusDistribution.reduce((acc, item) => {
-          acc[item.status] = item._count.status
-          return acc
-        }, {} as Record<string, number>),
-      },
-      topFarmers: topFarmers.map(f => ({
-        ...f,
-        orderCount: f._count.farmerOrders,
+      totalUsers,
+      activeSubscriptions,
+      totalOrders,
+      totalRevenue: revenueData._sum.totalAmount || 0,
+      usersByRole: usersByRole.map(item => ({
+        role: item.role,
+        _count: item._count.role,
       })),
+      recentOrders,
     })
   } catch (error) {
     console.error('Get analytics error:', error)
