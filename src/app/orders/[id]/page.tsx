@@ -5,9 +5,10 @@ import { useParams, useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowLeft, Package, MapPin, Phone, Star, Loader2, CheckCircle, Clock, Truck, XCircle } from 'lucide-react'
+import { ArrowLeft, Package, MapPin, Phone, Star, Loader2, CheckCircle, Clock, Truck, XCircle, User } from 'lucide-react'
 import { formatPrice, formatDate } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { useGlobalToast } from '@/components/toast-provider'
 
 interface OrderDetail {
@@ -28,11 +29,21 @@ interface OrderDetail {
   notes: string | null
   createdAt: string
   updatedAt: string
+  customerId: string
+  farmerId: string
   farmer: {
     id: string
     fullName: string
     phone: string
     profileImage: string | null
+    location?: string | null
+  }
+  customer: {
+    id: string
+    fullName: string
+    phone: string
+    profileImage: string | null
+    email?: string | null
   }
   items: Array<{
     id: string
@@ -50,6 +61,13 @@ interface OrderDetail {
 
 const statusSteps = ['PENDING', 'CONFIRMED', 'PACKED', 'OUT_FOR_DELIVERY', 'DELIVERED']
 
+const statusActions: Record<string, { next: string; label: string }> = {
+  PENDING: { next: 'CONFIRMED', label: 'Confirm Order' },
+  CONFIRMED: { next: 'PACKED', label: 'Mark Packed' },
+  PACKED: { next: 'OUT_FOR_DELIVERY', label: 'Out for Delivery' },
+  OUT_FOR_DELIVERY: { next: 'DELIVERED', label: 'Mark Delivered' },
+}
+
 export default function OrderDetailPage() {
   const params = useParams()
   const router = useRouter()
@@ -61,6 +79,13 @@ export default function OrderDetailPage() {
   const [rating, setRating] = useState(5)
   const [review, setReview] = useState('')
   const [isSubmittingRating, setIsSubmittingRating] = useState(false)
+
+  // Dialog states
+  const [cancelConfirm, setCancelConfirm] = useState(false)
+  const [statusConfirm, setStatusConfirm] = useState<{ isOpen: boolean; newStatus: string; label: string }>({
+    isOpen: false, newStatus: '', label: '',
+  })
+  const [isActionLoading, setIsActionLoading] = useState(false)
 
   useEffect(() => {
     if (authStatus === 'authenticated') {
@@ -79,6 +104,32 @@ export default function OrderDetailPage() {
       console.error('Failed to fetch order:', error)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const updateOrderStatus = async (newStatus: string) => {
+    if (!order) return
+    setIsActionLoading(true)
+    try {
+      const res = await fetch(`/api/orders/${order.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      })
+      if (res.ok) {
+        showToast(newStatus === 'CANCELLED' ? 'Order cancelled successfully' : 'Order updated successfully', 'success')
+        fetchOrder()
+      } else {
+        const data = await res.json()
+        showToast(data.error || 'Failed to update order', 'error')
+      }
+    } catch (error) {
+      console.error('Failed to update order:', error)
+      showToast('Failed to update order', 'error')
+    } finally {
+      setIsActionLoading(false)
+      setCancelConfirm(false)
+      setStatusConfirm({ isOpen: false, newStatus: '', label: '' })
     }
   }
 
@@ -126,9 +177,54 @@ export default function OrderDetailPage() {
 
   const currentStepIndex = statusSteps.indexOf(order.status)
   const isCancelled = order.status === 'CANCELLED' || order.status === 'DISPUTED'
+  const isFarmer = session?.user?.id === order.farmerId
+  const isCustomer = session?.user?.id === order.customerId
+  const farmerAction = isFarmer ? statusActions[order.status] : null
+  const canFarmerCancel = isFarmer && ['PENDING', 'CONFIRMED', 'PACKED', 'OUT_FOR_DELIVERY'].includes(order.status)
+  const canCustomerCancel = isCustomer && order.status === 'PENDING'
+
+  // Determine which person's info to display (show the other party)
+  const contactPerson = isFarmer ? {
+    label: 'Customer',
+    id: order.customer.id,
+    name: order.customer.fullName,
+    phone: order.customer.phone,
+    image: order.customer.profileImage,
+    link: null, // no public profile for customers
+  } : {
+    label: 'Seller',
+    id: order.farmer.id,
+    name: order.farmer.fullName,
+    phone: order.farmer.phone,
+    image: order.farmer.profileImage,
+    link: `/farmers/${order.farmer.id}`,
+  }
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      {/* Cancel Confirmation */}
+      <ConfirmDialog
+        isOpen={cancelConfirm}
+        onClose={() => setCancelConfirm(false)}
+        onConfirm={() => updateOrderStatus('CANCELLED')}
+        title="Cancel Order"
+        message={`Are you sure you want to cancel Order #${order.orderNumber}?${isFarmer ? ' Stock will be restored and the customer will be notified.' : ' This action cannot be undone.'}`}
+        confirmLabel="Cancel Order"
+        variant="danger"
+        isLoading={isActionLoading}
+      />
+
+      {/* Status Update Confirmation */}
+      <ConfirmDialog
+        isOpen={statusConfirm.isOpen}
+        onClose={() => setStatusConfirm({ isOpen: false, newStatus: '', label: '' })}
+        onConfirm={() => updateOrderStatus(statusConfirm.newStatus)}
+        title="Update Order Status"
+        message={`Mark Order #${order.orderNumber} as "${statusConfirm.label}"?`}
+        confirmLabel={statusConfirm.label}
+        isLoading={isActionLoading}
+      />
+
       <button onClick={() => router.back()} className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6">
         <ArrowLeft className="w-5 h-5" />
         Back
@@ -145,6 +241,9 @@ export default function OrderDetailPage() {
             <span className={`px-3 py-1 rounded-full text-sm font-medium ${
               order.status === 'DELIVERED' ? 'bg-green-100 text-green-700' :
               isCancelled ? 'bg-red-100 text-red-700' :
+              order.status === 'OUT_FOR_DELIVERY' ? 'bg-indigo-100 text-indigo-700' :
+              order.status === 'PACKED' ? 'bg-purple-100 text-purple-700' :
+              order.status === 'CONFIRMED' ? 'bg-blue-100 text-blue-700' :
               'bg-yellow-100 text-yellow-700'
             }`}>
               {order.status.replace(/_/g, ' ')}
@@ -173,7 +272,7 @@ export default function OrderDetailPage() {
                        step === 'OUT_FOR_DELIVERY' ? <Truck className="w-4 h-4" /> :
                        <Clock className="w-4 h-4" />}
                     </div>
-                    <span className={`text-xs mt-2 ${isCurrent ? 'text-green-600 font-medium' : 'text-gray-500'}`}>
+                    <span className={`text-xs mt-2 hidden sm:block ${isCurrent ? 'text-green-600 font-medium' : 'text-gray-500'}`}>
                       {step.replace(/_/g, ' ')}
                     </span>
                   </div>
@@ -183,27 +282,84 @@ export default function OrderDetailPage() {
           </div>
         )}
 
-        {/* Farmer Info */}
+        {/* Farmer Actions */}
+        {isFarmer && (farmerAction || canFarmerCancel) && (
+          <div className="px-6 py-4 bg-green-50 border-b border-gray-100 flex gap-3 flex-wrap">
+            {farmerAction && (
+              <Button
+                onClick={() => setStatusConfirm({ isOpen: true, newStatus: farmerAction.next, label: farmerAction.label })}
+              >
+                {order.status === 'PENDING' && <CheckCircle className="w-4 h-4 mr-1" />}
+                {order.status === 'CONFIRMED' && <Package className="w-4 h-4 mr-1" />}
+                {order.status === 'PACKED' && <Truck className="w-4 h-4 mr-1" />}
+                {order.status === 'OUT_FOR_DELIVERY' && <CheckCircle className="w-4 h-4 mr-1" />}
+                {farmerAction.label}
+              </Button>
+            )}
+            {canFarmerCancel && (
+              <Button variant="destructive" onClick={() => setCancelConfirm(true)}>
+                <XCircle className="w-4 h-4 mr-1" />
+                Cancel Order
+              </Button>
+            )}
+          </div>
+        )}
+
+        {/* Customer Cancel Action */}
+        {canCustomerCancel && (
+          <div className="px-6 py-4 bg-red-50 border-b border-gray-100">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-gray-700">Changed your mind? You can cancel while the order is pending.</p>
+              <Button variant="destructive" size="sm" onClick={() => setCancelConfirm(true)}>
+                <XCircle className="w-4 h-4 mr-1" />
+                Cancel Order
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Contact Person Info (shows the other party) */}
         <div className="p-6 border-b border-gray-100">
-          <h2 className="font-semibold text-gray-900 mb-3">Seller</h2>
-          <Link href={`/farmers/${order.farmer.id}`} className="flex items-center gap-3">
-            <div className="relative w-12 h-12 rounded-full overflow-hidden bg-green-100">
-              {order.farmer.profileImage ? (
-                <Image src={order.farmer.profileImage} alt="" fill className="object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-green-600 font-bold">
-                  {order.farmer.fullName.charAt(0)}
-                </div>
-              )}
+          <h2 className="font-semibold text-gray-900 mb-3">{contactPerson.label}</h2>
+          {contactPerson.link ? (
+            <Link href={contactPerson.link} className="flex items-center gap-3">
+              <div className="relative w-12 h-12 rounded-full overflow-hidden bg-green-100">
+                {contactPerson.image ? (
+                  <Image src={contactPerson.image} alt="" fill className="object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-green-600 font-bold">
+                    {contactPerson.name.charAt(0)}
+                  </div>
+                )}
+              </div>
+              <div>
+                <p className="font-medium text-gray-900">{contactPerson.name}</p>
+                <p className="text-sm text-gray-500 flex items-center gap-1">
+                  <Phone className="w-3 h-3" />
+                  {contactPerson.phone}
+                </p>
+              </div>
+            </Link>
+          ) : (
+            <div className="flex items-center gap-3">
+              <div className="relative w-12 h-12 rounded-full overflow-hidden bg-blue-100">
+                {contactPerson.image ? (
+                  <Image src={contactPerson.image} alt="" fill className="object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-blue-600 font-bold">
+                    {contactPerson.name.charAt(0)}
+                  </div>
+                )}
+              </div>
+              <div>
+                <p className="font-medium text-gray-900">{contactPerson.name}</p>
+                <p className="text-sm text-gray-500 flex items-center gap-1">
+                  <Phone className="w-3 h-3" />
+                  {contactPerson.phone}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="font-medium text-gray-900">{order.farmer.fullName}</p>
-              <p className="text-sm text-gray-500 flex items-center gap-1">
-                <Phone className="w-3 h-3" />
-                {order.farmer.phone}
-              </p>
-            </div>
-          </Link>
+          )}
         </div>
 
         {/* Items */}
@@ -247,6 +403,14 @@ export default function OrderDetailPage() {
           </div>
         )}
 
+        {/* Notes */}
+        {order.notes && (
+          <div className="p-6 border-b border-gray-100">
+            <h2 className="font-semibold text-gray-900 mb-2">Notes</h2>
+            <p className="text-sm text-gray-600">{order.notes}</p>
+          </div>
+        )}
+
         {/* Summary */}
         <div className="p-6">
           <div className="space-y-2 text-sm">
@@ -265,8 +429,8 @@ export default function OrderDetailPage() {
             </div>
           </div>
 
-          {/* Rate Order Button */}
-          {order.status === 'DELIVERED' && !showRating && (
+          {/* Rate Order Button (customer only, delivered orders) */}
+          {isCustomer && order.status === 'DELIVERED' && !showRating && (
             <Button onClick={() => setShowRating(true)} className="w-full mt-6" variant="outline">
               <Star className="w-4 h-4 mr-2" />
               Rate this Order
