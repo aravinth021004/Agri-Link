@@ -1,13 +1,11 @@
+import { Resend } from 'resend'
+
 type EmailPayload = {
   to: string
   subject: string
   html: string
 }
 
-/**
- * Send an email. Uses console logging in dev/console mode.
- * In production, replace the implementation with Resend, SendGrid, etc.
- */
 export async function sendEmail({ to, subject, html }: EmailPayload): Promise<boolean> {
   const mode = process.env.EMAIL_MODE || 'console'
 
@@ -21,14 +19,9 @@ export async function sendEmail({ to, subject, html }: EmailPayload): Promise<bo
     return true
   }
 
-  // Production: use Resend or any transactional email provider
-  // Example with Resend (install with: npm i resend)
-  // const resend = new Resend(process.env.RESEND_API_KEY)
-  // await resend.emails.send({ from: 'AgriLink <noreply@agrilink.com>', to, subject, html })
-
   try {
     const apiKey = process.env.EMAIL_API_KEY
-    const fromEmail = process.env.EMAIL_FROM || 'noreply@agrilink.com'
+    const fromEmail = process.env.EMAIL_FROM || 'AgriLink <noreply@agrilink.com>'
 
     if (!apiKey) {
       console.warn('EMAIL_API_KEY not set, falling back to console mode')
@@ -36,23 +29,16 @@ export async function sendEmail({ to, subject, html }: EmailPayload): Promise<bo
       return true
     }
 
-    // Generic SMTP/API call placeholder - swap with your provider
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: fromEmail,
-        to,
-        subject,
-        html,
-      }),
+    const resend = new Resend(apiKey)
+    const { error } = await resend.emails.send({
+      from: fromEmail,
+      to,
+      subject,
+      html,
     })
 
-    if (!response.ok) {
-      console.error('Email send failed:', await response.text())
+    if (error) {
+      console.error('Email send failed:', error)
       return false
     }
 
@@ -171,6 +157,30 @@ export function welcomeEmail(name: string) {
              style="display: inline-block; background: #16a34a; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 10px;">
             Start Browsing
           </a>
+        </div>
+        <div style="background: #f3f4f6; padding: 15px; text-align: center; color: #6b7280; font-size: 12px;">
+          <p>Fresh from the farm, direct to you.</p>
+        </div>
+      </div>
+    `,
+  }
+}
+
+export function otpEmail(code: string) {
+  return {
+    subject: `AgriLink - Your verification code: ${code}`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: #16a34a; color: white; padding: 20px; text-align: center;">
+          <h1 style="margin: 0;">🌾 AgriLink</h1>
+        </div>
+        <div style="padding: 20px;">
+          <h2>Password Reset Code</h2>
+          <p>Use the following code to reset your password:</p>
+          <div style="background: #f3f4f6; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0;">
+            <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #16a34a;">${code}</span>
+          </div>
+          <p>This code expires in <strong>10 minutes</strong>. If you did not request this, please ignore this email.</p>
         </div>
         <div style="background: #f3f4f6; padding: 15px; text-align: center; color: #6b7280; font-size: 12px;">
           <p>Fresh from the farm, direct to you.</p>

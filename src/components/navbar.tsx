@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
 import { Home, Search, ShoppingCart, User, LogOut, Menu, X, MessageSquare, Package, Settings } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
 import { useCartStore } from '@/stores/cart-store'
 import { Button } from '@/components/ui/button'
@@ -17,6 +17,25 @@ export function Navbar() {
   const { data: session, status } = useSession()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const cartItemCount = useCartStore((state) => state.getItemCount())
+  const [unreadMessages, setUnreadMessages] = useState(0)
+
+  const fetchUnread = useCallback(async () => {
+    try {
+      const res = await fetch('/api/messages/unread')
+      const data = await res.json()
+      setUnreadMessages(data.unreadCount || 0)
+    } catch {
+      // silently ignore
+    }
+  }, [])
+
+  useEffect(() => {
+    if (session?.user) {
+      fetchUnread()
+      const interval = setInterval(fetchUnread, 30000)
+      return () => clearInterval(interval)
+    }
+  }, [session?.user, fetchUnread])
 
   const isActive = (path: string) => pathname === path
 
@@ -24,7 +43,7 @@ export function Navbar() {
     { href: '/feed', label: t('feed'), icon: Home },
     { href: '/search', label: t('search'), icon: Search },
     { href: '/cart', label: t('cart'), icon: ShoppingCart, badge: cartItemCount },
-    { href: '/messages', label: t('messages'), icon: MessageSquare },
+    { href: '/messages', label: t('messages'), icon: MessageSquare, dot: unreadMessages > 0 },
   ]
 
   return (
@@ -63,6 +82,9 @@ export function Navbar() {
                   <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
                     {link.badge > 9 ? '9+' : link.badge}
                   </span>
+                ) : null}
+                {link.dot ? (
+                  <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full" />
                 ) : null}
               </Link>
             ))}
@@ -143,7 +165,7 @@ export function Navbar() {
                   key={link.href}
                   href={link.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg ${
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg relative ${
                     isActive(link.href)
                       ? 'bg-green-50 text-green-600'
                       : 'text-gray-600'
@@ -151,6 +173,9 @@ export function Navbar() {
                 >
                   <link.icon className="w-5 h-5" />
                   <span>{link.label}</span>
+                  {link.dot ? (
+                    <span className="w-2.5 h-2.5 bg-red-500 rounded-full" />
+                  ) : null}
                 </Link>
               ))}
               

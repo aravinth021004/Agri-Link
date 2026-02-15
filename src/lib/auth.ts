@@ -2,6 +2,7 @@ import { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import bcrypt from 'bcryptjs'
 import prisma from './prisma'
+import { verifyTotpCode } from './totp'
 
 declare module 'next-auth' {
   interface User {
@@ -36,13 +37,14 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         emailOrPhone: { label: 'Email or Phone', type: 'text' },
         password: { label: 'Password', type: 'password' },
+        totpCode: { label: 'Authenticator Code', type: 'text' },
       },
       async authorize(credentials) {
         if (!credentials?.emailOrPhone || !credentials?.password) {
           throw new Error('Email/Phone and password are required')
         }
 
-        const { emailOrPhone, password } = credentials
+        const { emailOrPhone, password, totpCode } = credentials
 
         // Find user by email or phone
         const user = await prisma.user.findFirst({
@@ -63,6 +65,16 @@ export const authOptions: NextAuthOptions = {
 
         if (!isPasswordValid) {
           throw new Error('Invalid credentials')
+        }
+
+        // TOTP verification for users with 2FA enabled
+        if (user.totpEnabled && user.totpSecret) {
+          if (!totpCode) {
+            throw new Error('TOTP_REQUIRED')
+          }
+          if (!verifyTotpCode(user.totpSecret, totpCode)) {
+            throw new Error('TOTP_INVALID')
+          }
         }
 
         return {

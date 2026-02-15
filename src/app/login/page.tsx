@@ -9,7 +9,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useTranslations } from 'next-intl'
-import { Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff, Shield } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
@@ -27,24 +27,41 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [step, setStep] = useState<'credentials' | 'totp'>('credentials')
+  const [savedCredentials, setSavedCredentials] = useState<LoginForm | null>(null)
+  const [totpCode, setTotpCode] = useState('')
 
   const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
   })
+
+  const attemptLogin = async (emailOrPhone: string, password: string, totp?: string) => {
+    const result = await signIn('credentials', {
+      emailOrPhone,
+      password,
+      totpCode: totp || '',
+      redirect: false,
+    })
+
+    return result
+  }
 
   const onSubmit = async (data: LoginForm) => {
     setIsLoading(true)
     setError('')
 
     try {
-      const result = await signIn('credentials', {
-        emailOrPhone: data.emailOrPhone,
-        password: data.password,
-        redirect: false,
-      })
+      const result = await attemptLogin(data.emailOrPhone, data.password)
 
       if (result?.error) {
-        setError(t('invalidCredentials'))
+        if (result.error === 'TOTP_REQUIRED') {
+          setSavedCredentials(data)
+          setStep('totp')
+        } else if (result.error === 'TOTP_INVALID') {
+          setError('Invalid authenticator code')
+        } else {
+          setError(t('invalidCredentials'))
+        }
       } else {
         router.push('/feed')
         router.refresh()
@@ -54,6 +71,86 @@ export default function LoginPage() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const verifyTotp = async () => {
+    if (!savedCredentials) return
+    setIsLoading(true)
+    setError('')
+
+    try {
+      const result = await attemptLogin(
+        savedCredentials.emailOrPhone,
+        savedCredentials.password,
+        totpCode
+      )
+
+      if (result?.error) {
+        if (result.error === 'TOTP_INVALID') {
+          setError('Invalid authenticator code')
+        } else {
+          setError(t('invalidCredentials'))
+        }
+      } else {
+        router.push('/feed')
+        router.refresh()
+      }
+    } catch {
+      setError(tErrors('somethingWrong'))
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  if (step === 'totp') {
+    return (
+      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-md">
+          <div className="bg-white rounded-2xl shadow-lg p-8">
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Shield className="w-8 h-8 text-green-600" />
+              </div>
+              <h1 className="text-2xl font-bold text-gray-900">Two-Factor Authentication</h1>
+              <p className="text-gray-600 mt-2">
+                Enter the 6-digit code from Google Authenticator
+              </p>
+            </div>
+
+            {error && (
+              <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg text-sm mb-6">
+                {error}
+              </div>
+            )}
+
+            <div className="space-y-6">
+              <Input
+                label="Authenticator Code"
+                placeholder="Enter 6-digit code"
+                value={totpCode}
+                onChange={(e) => setTotpCode(e.target.value)}
+                maxLength={6}
+              />
+
+              <Button onClick={verifyTotp} className="w-full" size="lg" isLoading={isLoading}>
+                {isLoading ? t('signingIn') : 'Verify & Login'}
+              </Button>
+
+              <button
+                onClick={() => {
+                  setStep('credentials')
+                  setTotpCode('')
+                  setError('')
+                }}
+                className="w-full text-sm text-gray-500 hover:text-gray-700"
+              >
+                Back to login
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (

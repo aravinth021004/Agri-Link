@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { verifyOtpSchema } from '@/lib/validations'
+import { verifyTotpCode } from '@/lib/totp'
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,7 +18,54 @@ export async function POST(request: NextRequest) {
 
     const { email, phone, code, purpose } = result.data
 
-    // Find OTP record
+    // For email/phone verification, use TOTP
+    if (purpose === 'VERIFY_EMAIL' || purpose === 'VERIFY_PHONE') {
+      const user = await prisma.user.findFirst({
+        where: {
+          OR: [
+            { email: email || undefined },
+            { phone: phone || undefined },
+          ],
+        },
+      })
+
+      if (!user || !user.totpSecret) {
+        return NextResponse.json(
+          { error: 'Invalid verification request' },
+          { status: 400 }
+        )
+      }
+
+      const isValid = verifyTotpCode(user.totpSecret, code)
+
+      if (!isValid) {
+        return NextResponse.json(
+          { error: 'Invalid authenticator code' },
+          { status: 400 }
+        )
+      }
+
+      const updateData: { emailVerified?: boolean; phoneVerified?: boolean; totpEnabled?: boolean } = {}
+      if (purpose === 'VERIFY_EMAIL') {
+        updateData.emailVerified = true
+        updateData.totpEnabled = true
+      } else if (purpose === 'VERIFY_PHONE') {
+        updateData.phoneVerified = true
+        updateData.totpEnabled = true
+      }
+
+      await prisma.user.update({
+        where: { id: user.id },
+        data: updateData,
+      })
+
+      return NextResponse.json({
+        message: 'Verification successful',
+        verified: true,
+      })
+    }
+
+    // For password reset, use stored OTP from database
     const otpRecord = await prisma.otpCode.findFirst({
       where: {
         OR: [
@@ -48,22 +96,6 @@ export async function POST(request: NextRequest) {
       where: { id: otpRecord.id },
       data: { used: true },
     })
-
-    // Update user verification status
-    if (otpRecord.userId) {
-      const updateData: { emailVerified?: boolean; phoneVerified?: boolean } = {}
-      
-      if (purpose === 'VERIFY_EMAIL') {
-        updateData.emailVerified = true
-      } else if (purpose === 'VERIFY_PHONE') {
-        updateData.phoneVerified = true
-      }
-
-      await prisma.user.update({
-        where: { id: otpRecord.userId },
-        data: updateData,
-      })
-    }
 
     return NextResponse.json({
       message: 'Verification successful',

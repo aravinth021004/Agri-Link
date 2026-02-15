@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs'
 import prisma from '@/lib/prisma'
 import { resetPasswordSchema, newPasswordSchema } from '@/lib/validations'
 import { generateOTP } from '@/lib/utils'
+import { sendEmail, otpEmail } from '@/lib/email'
 
 // Request password reset
 export async function POST(request: NextRequest) {
@@ -59,6 +60,10 @@ export async function POST(request: NextRequest) {
     console.log(`🔐 Password Reset OTP for ${email}: ${otp}`)
     console.log(`⏰ Expires at: ${expiresAt.toLocaleString()}`)
     console.log('='.repeat(50))
+
+    // Send OTP via email
+    const otpMail = otpEmail(otp)
+    sendEmail({ to: email, ...otpMail }).catch(() => {})
 
     return NextResponse.json({
       message: 'If the email exists, a reset code has been sent.',

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import prisma from '@/lib/prisma'
 import { signupSchema } from '@/lib/validations'
-import { generateOTP } from '@/lib/utils'
+import { generateTotpSecret, generateQrCodeDataUrl } from '@/lib/totp'
 import { sendEmail, welcomeEmail } from '@/lib/email'
 
 export async function POST(request: NextRequest) {
@@ -55,34 +55,25 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Generate OTP for email verification
-    const otp = generateOTP()
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
-
-    await prisma.otpCode.create({
-      data: {
-        userId: user.id,
-        email: user.email,
-        code: otp,
-        purpose: 'VERIFY_EMAIL',
-        expiresAt,
-      },
+    // Generate TOTP secret for email verification
+    const totpSecret = generateTotpSecret()
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { totpSecret },
     })
 
-    // Log OTP to console (development mode)
-    console.log('='.repeat(50))
-    console.log(`📧 OTP for ${email}: ${otp}`)
-    console.log(`⏰ Expires at: ${expiresAt.toLocaleString()}`)
-    console.log('='.repeat(50))
+    const qrCodeUrl = await generateQrCodeDataUrl(email, totpSecret)
 
     // Send welcome email (fire-and-forget)
     const welcome = welcomeEmail(fullName)
     sendEmail({ to: email, ...welcome }).catch(() => {})
 
     return NextResponse.json({
-      message: 'User created successfully. Please verify your email.',
+      message: 'User created successfully. Please set up authenticator.',
       user,
       requiresVerification: true,
+      qrCodeUrl,
+      totpSecret,
     })
   } catch (error) {
     console.error('Signup error:', error)
