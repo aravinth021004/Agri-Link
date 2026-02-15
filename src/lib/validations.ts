@@ -72,12 +72,12 @@ export const createOrderSchema = z.object({
     state: z.string(),
     pincode: z.string(),
     landmark: z.string().optional(),
-  }).optional(),
+  }).nullish(),
   pickupLocation: z.object({
     latitude: z.number(),
     longitude: z.number(),
     address: z.string(),
-  }).optional(),
+  }).nullish(),
   notes: z.string().max(500).optional(),
 })
 
