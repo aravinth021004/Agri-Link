@@ -67,30 +67,11 @@ export default function SubscriptionPage() {
   const handleSubscribe = async (planId: string) => {
     setSubscribingPlan(planId)
     try {
-      // Create mock payment
       const plan = plans.find(p => p.id === planId)
       if (!plan) return
 
-      const paymentRes = await fetch('/api/payments/create-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: plan.price,
-          type: 'subscription',
-        }),
-      })
-      const paymentData = await paymentRes.json()
-
-      // Verify mock payment
-      await fetch('/api/payments/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          razorpay_order_id: paymentData.orderId,
-          razorpay_payment_id: `pay_mock_${Date.now()}`,
-          razorpay_signature: 'mock_signature',
-        }),
-      })
+      // Generate a mock payment ID for subscription
+      const paymentId = `sub_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
 
       // Subscribe
       const subscribeRes = await fetch('/api/subscriptions/subscribe', {
@@ -98,7 +79,7 @@ export default function SubscriptionPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           planId,
-          paymentId: paymentData.orderId,
+          paymentId,
         }),
       })
 

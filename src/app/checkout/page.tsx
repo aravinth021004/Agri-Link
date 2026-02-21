@@ -6,14 +6,16 @@ import { useRouter } from 'next/navigation'
 import { formatPrice } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Loader2, CheckCircle, MapPin } from 'lucide-react'
+import { Loader2, CheckCircle, MapPin, CreditCard, Banknote, QrCode } from 'lucide-react'
 import { useGlobalToast } from '@/components/toast-provider'
 import { useTranslations } from 'next-intl'
+import QRCode from 'qrcode'
 
 interface CartGroup {
   farmer: {
     id: string
     fullName: string
+    upiId: string | null
   }
   items: Array<{
     id: string
@@ -27,6 +29,7 @@ interface CartGroup {
   }>
   subtotal: number
   deliveryFee: number
+  total: number
 }
 
 export default function CheckoutPage() {
@@ -41,6 +44,9 @@ export default function CheckoutPage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [orderPlaced, setOrderPlaced] = useState(false)
   const [orderIds, setOrderIds] = useState<string[]>([])
+  const [paymentMethod, setPaymentMethod] = useState<'UPI' | 'COD'>('COD')
+  const [upiRefId, setUpiRefId] = useState('')
+  const [qrDataUrls, setQrDataUrls] = useState<Record<string, string>>({})
   
   const [address, setAddress] = useState({
     street: '',
@@ -71,8 +77,31 @@ export default function CheckoutPage() {
     }
   }, [status, router, fetchCart])
 
+  // Generate QR codes when UPI is selected
+  useEffect(() => {
+    if (paymentMethod !== 'UPI') return
+    
+    const generateQrCodes = async () => {
+      const urls: Record<string, string> = {}
+      for (const group of cartGroups) {
+        if (group.farmer.upiId) {
+          const upiUrl = `upi://pay?pa=${encodeURIComponent(group.farmer.upiId)}&pn=${encodeURIComponent(group.farmer.fullName)}&am=${group.total.toFixed(2)}&cu=INR`
+          try {
+            urls[group.farmer.id] = await QRCode.toDataURL(upiUrl, { width: 200, margin: 2 })
+          } catch {
+            // skip
+          }
+        }
+      }
+      setQrDataUrls(urls)
+    }
+    
+    generateQrCodes()
+  }, [paymentMethod, cartGroups])
+
+  const allFarmersHaveUpi = cartGroups.every(g => g.farmer.upiId)
+
   const handlePlaceOrder = async () => {
-    // Validate address for home delivery
     const hasHomeDelivery = cartGroups.some(g => 
       g.items.some(i => i.deliveryOption === 'HOME_DELIVERY')
     )
@@ -82,38 +111,23 @@ export default function CheckoutPage() {
       return
     }
 
+    if (paymentMethod === 'UPI') {
+      if (!upiRefId || !/^\d{12}$/.test(upiRefId)) {
+        showToast(t('enterValidUpiRef'), 'warning')
+        return
+      }
+    }
+
     setIsProcessing(true)
     
     try {
-      // Create mock payment order
-      const paymentResponse = await fetch('/api/payments/create-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: grandTotal,
-          type: 'order',
-        }),
-      })
-      const paymentData = await paymentResponse.json()
-
-      // Verify mock payment
-      await fetch('/api/payments/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          razorpay_order_id: paymentData.orderId,
-          razorpay_payment_id: `pay_mock_${Date.now()}`,
-          razorpay_signature: 'mock_signature',
-        }),
-      })
-
-      // Create orders
       const orderResponse = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...(hasHomeDelivery ? { deliveryAddress: address } : {}),
-          paymentId: paymentData.orderId,
+          paymentMethod,
+          ...(paymentMethod === 'UPI' ? { upiRefId } : {}),
         }),
       })
 
@@ -148,11 +162,17 @@ export default function CheckoutPage() {
           <CheckCircle className="w-10 h-10 text-green-600" />
         </div>
         <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('orderPlaced')}</h1>
-        <p className="text-gray-600 mb-6">
+        <p className="text-gray-600 mb-2">
           {orderIds.length > 1 
             ? t('ordersCreated', { count: orderIds.length })
             : t('orderSentToFarmer')}
         </p>
+        {paymentMethod === 'UPI' && (
+          <p className="text-sm text-amber-600 mb-4">{t('upiPaymentPending')}</p>
+        )}
+        {paymentMethod === 'COD' && (
+          <p className="text-sm text-gray-500 mb-4">{t('codNote')}</p>
+        )}
         <div className="space-y-3">
           <Button onClick={() => router.push('/orders')} className="w-full">
             {t('viewMyOrders')}
@@ -225,6 +245,105 @@ export default function CheckoutPage() {
             </div>
           )}
 
+          {/* Payment Method */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <CreditCard className="w-5 h-5 text-green-600" />
+              {t('paymentMethod')}
+            </h2>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <button
+                onClick={() => setPaymentMethod('COD')}
+                className={`p-4 rounded-lg border-2 text-left transition ${
+                  paymentMethod === 'COD'
+                    ? 'border-green-500 bg-green-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Banknote className="w-6 h-6 text-green-600" />
+                  <div>
+                    <p className="font-medium text-gray-900">{t('cod')}</p>
+                    <p className="text-xs text-gray-500">{t('codDesc')}</p>
+                  </div>
+                </div>
+              </button>
+              <button
+                onClick={() => allFarmersHaveUpi ? setPaymentMethod('UPI') : showToast(t('farmerNoUpi'), 'warning')}
+                className={`p-4 rounded-lg border-2 text-left transition ${
+                  paymentMethod === 'UPI'
+                    ? 'border-green-500 bg-green-50'
+                    : allFarmersHaveUpi
+                      ? 'border-gray-200 hover:border-gray-300'
+                      : 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <QrCode className="w-6 h-6 text-purple-600" />
+                  <div>
+                    <p className="font-medium text-gray-900">{t('upi')}</p>
+                    <p className="text-xs text-gray-500">
+                      {allFarmersHaveUpi ? t('upiDesc') : t('farmerNoUpi')}
+                    </p>
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {/* UPI Payment Details */}
+          {paymentMethod === 'UPI' && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <QrCode className="w-5 h-5 text-purple-600" />
+                {t('upiPayment')}
+              </h2>
+              <p className="text-sm text-gray-600 mb-4">{t('upiInstructions')}</p>
+              
+              <div className="space-y-6">
+                {cartGroups.map((group) => (
+                  <div key={group.farmer.id} className="border border-gray-100 rounded-lg p-4">
+                    <div className="flex items-start gap-4">
+                      {qrDataUrls[group.farmer.id] && (
+                        <div className="flex-shrink-0">
+                          <img
+                            src={qrDataUrls[group.farmer.id]}
+                            alt={`UPI QR for ${group.farmer.fullName}`}
+                            className="w-40 h-40 rounded-lg border border-gray-200"
+                          />
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-900">{group.farmer.fullName}</p>
+                        <p className="text-sm text-gray-500 mt-1">
+                          UPI: <span className="font-mono text-gray-700">{group.farmer.upiId}</span>
+                        </p>
+                        <p className="text-lg font-bold text-green-600 mt-2">
+                          {formatPrice(group.total)}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-2">{t('scanOrCopy')}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-6">
+                <Input
+                  label={t('upiRefLabel')}
+                  placeholder={t('upiRefPlaceholder')}
+                  value={upiRefId}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '').slice(0, 12)
+                    setUpiRefId(val)
+                  }}
+                  maxLength={12}
+                />
+                <p className="text-xs text-gray-400 mt-1">{t('upiRefHelp')}</p>
+              </div>
+            </div>
+          )}
+
           {/* Order Review */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <h2 className="text-lg font-bold text-gray-900 mb-4">{t('orderReview')}</h2>
@@ -268,6 +387,15 @@ export default function CheckoutPage() {
                 </div>
               ))}
               <hr />
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">{t('paymentMethod')}</span>
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  paymentMethod === 'UPI' ? 'bg-purple-100 text-purple-700' : 'bg-green-100 text-green-700'
+                }`}>
+                  {paymentMethod === 'UPI' ? t('upi') : t('cod')}
+                </span>
+              </div>
+              <hr />
               <div className="flex justify-between text-lg font-bold">
                 <span>{t('total')}</span>
                 <span className="text-green-600">{formatPrice(grandTotal)}</span>
@@ -280,12 +408,19 @@ export default function CheckoutPage() {
               onClick={handlePlaceOrder}
               isLoading={isProcessing}
             >
-              {isProcessing ? t('processing') : `${t('pay')} ${formatPrice(grandTotal)}`}
+              {isProcessing ? t('processing') : t('placeOrder')}
             </Button>
             
-            <p className="text-xs text-gray-400 text-center mt-4">
-              {t('mockPaymentNote')}
-            </p>
+            {paymentMethod === 'COD' && (
+              <p className="text-xs text-gray-400 text-center mt-4">
+                {t('codNote')}
+              </p>
+            )}
+            {paymentMethod === 'UPI' && (
+              <p className="text-xs text-amber-500 text-center mt-4">
+                {t('upiNote')}
+              </p>
+            )}
           </div>
         </div>
       </div>

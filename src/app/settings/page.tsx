@@ -4,8 +4,9 @@ import { useState, useEffect, useCallback } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { Settings, Bell, Languages, LogOut, Loader2, ChevronRight, Save, Lock } from 'lucide-react'
+import { Settings, Bell, Languages, LogOut, Loader2, ChevronRight, Save, Lock, CreditCard } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { useLocale } from '@/hooks/use-locale'
 import { type Locale } from '@/i18n/config'
@@ -27,11 +28,24 @@ export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [logoutConfirm, setLogoutConfirm] = useState(false)
+  const [upiId, setUpiId] = useState('')
+  const [isSavingUpi, setIsSavingUpi] = useState(false)
 
   useEffect(() => {
     setCurrentLocale(getLocale())
     setIsLoading(false)
   }, [getLocale])
+
+  useEffect(() => {
+    if (session?.user?.role === 'FARMER') {
+      fetch('/api/users/profile')
+        .then(res => res.json())
+        .then(data => {
+          if (data.user?.upiId) setUpiId(data.user.upiId)
+        })
+        .catch(() => {})
+    }
+  }, [session?.user?.role])
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -57,6 +71,30 @@ export default function SettingsPage() {
       console.error('Failed to save settings:', error)
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  const handleSaveUpi = async () => {
+    if (upiId && !/^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$/.test(upiId)) {
+      showToast(t('invalidUpiFormat'), 'error')
+      return
+    }
+    setIsSavingUpi(true)
+    try {
+      const res = await fetch('/api/users/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ upiId: upiId || null }),
+      })
+      if (res.ok) {
+        showToast(t('upiSaved'), 'success')
+      } else {
+        showToast('Failed to save UPI ID', 'error')
+      }
+    } catch (error) {
+      console.error('Failed to save UPI:', error)
+    } finally {
+      setIsSavingUpi(false)
     }
   }
 
@@ -172,6 +210,36 @@ export default function SettingsPage() {
             </label>
           </div>
         </div>
+
+        {/* Payment Settings (Farmer only) */}
+        {session?.user?.role === 'FARMER' && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                <CreditCard className="w-5 h-5 text-purple-600" />
+              </div>
+              <div>
+                <h2 className="font-semibold text-gray-900">{t('paymentSettings')}</h2>
+                <p className="text-sm text-gray-500">{t('paymentSettingsDesc')}</p>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <Input
+                  label={t('upiId')}
+                  placeholder="yourname@upi"
+                  value={upiId}
+                  onChange={(e) => setUpiId(e.target.value)}
+                />
+                <p className="text-xs text-gray-400 mt-1">{t('upiIdHelp')}</p>
+              </div>
+              <Button onClick={handleSaveUpi} isLoading={isSavingUpi} className="w-full">
+                <Save className="w-4 h-4 mr-2" />
+                {t('saveUpi')}
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Account Actions */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">

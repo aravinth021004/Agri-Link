@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Package, ShoppingBag, Users, Star, TrendingUp, Plus, Edit, Trash2, Eye, Loader2, Clock, CheckCircle, Truck, XCircle, ChevronRight } from 'lucide-react'
+import { Package, ShoppingBag, Users, Star, TrendingUp, Plus, Edit, Trash2, Eye, Loader2, Clock, CheckCircle, Truck, XCircle, ChevronRight, Banknote, QrCode } from 'lucide-react'
 import { formatPrice, formatDate } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
@@ -30,6 +30,9 @@ interface Order {
   orderNumber: string
   status: string
   totalAmount: number
+  paymentMethod: string
+  paymentStatus: string
+  upiRefId: string | null
   createdAt: string
   customer: {
     id: string
@@ -169,6 +172,24 @@ export default function DashboardPage() {
     } finally {
       setIsActionLoading(false)
       setDeleteConfirm({ isOpen: false, productId: '', productTitle: '' })
+    }
+  }
+
+  const confirmPayment = async (orderId: string) => {
+    try {
+      const res = await fetch(`/api/orders/${orderId}/confirm-payment`, {
+        method: 'POST',
+      })
+      if (res.ok) {
+        showToast(tOrders('paymentConfirmedSuccess'), 'success')
+        fetchDashboardData()
+      } else {
+        const data = await res.json()
+        showToast(data.error || 'Failed to confirm payment', 'error')
+      }
+    } catch (error) {
+      console.error('Failed to confirm payment:', error)
+      showToast('Failed to confirm payment', 'error')
     }
   }
 
@@ -558,6 +579,24 @@ export default function DashboardPage() {
                           <ChevronRight className="w-5 h-5 text-gray-400" />
                         </div>
                       </div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${
+                          order.paymentMethod === 'UPI' ? 'bg-purple-100 text-purple-700' : 'bg-green-100 text-green-700'
+                        }`}>
+                          {order.paymentMethod === 'UPI' ? <QrCode className="w-3 h-3" /> : <Banknote className="w-3 h-3" />}
+                          {order.paymentMethod}
+                        </span>
+                        {order.paymentMethod === 'UPI' && (
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${
+                            order.paymentStatus === 'CONFIRMED' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                          }`}>
+                            {order.paymentStatus === 'CONFIRMED' ? tOrders('paymentConfirmed') : tOrders('paymentPending')}
+                          </span>
+                        )}
+                        {order.upiRefId && (
+                          <span className="text-xs text-gray-400">Ref: {order.upiRefId}</span>
+                        )}
+                      </div>
                       <div className="text-sm text-gray-600">
                         {order.items.map((item, idx) => (
                           <span key={idx}>
@@ -569,8 +608,21 @@ export default function DashboardPage() {
                     </Link>
 
                     {/* Action Buttons */}
-                    {(action || canCancel(order.status)) && (
+                    {(action || canCancel(order.status) || (order.paymentMethod === 'UPI' && order.paymentStatus === 'PENDING')) && (
                       <div className="px-4 pb-4 flex gap-2 flex-wrap">
+                        {order.paymentMethod === 'UPI' && order.paymentStatus === 'PENDING' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={(e) => {
+                              e.preventDefault()
+                              confirmPayment(order.id)
+                            }}
+                          >
+                            <CheckCircle className="w-4 h-4 mr-1" />
+                            {tOrders('confirmPayment')}
+                          </Button>
+                        )}
                         {action && (
                           <Button
                             size="sm"

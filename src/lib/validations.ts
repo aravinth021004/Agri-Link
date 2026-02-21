@@ -79,6 +79,8 @@ export const createOrderSchema = z.object({
     address: z.string(),
   }).nullish(),
   notes: z.string().max(500).optional(),
+  paymentMethod: z.enum(['UPI', 'COD']),
+  upiRefId: z.string().regex(/^\d{12}$/, 'UPI Reference ID must be 12 digits').optional(),
 })
 
 export const updateOrderStatusSchema = z.object({
@@ -111,6 +113,7 @@ export const profileSchema = z.object({
   bio: z.string().max(300).optional(),
   location: z.string().max(100).optional(),
   language: z.enum(['en', 'hi', 'ta']).optional(),
+  upiId: z.string().regex(/^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$/, 'Invalid UPI ID format (e.g. name@upi)').optional(),
 })
 
 // Subscription schema

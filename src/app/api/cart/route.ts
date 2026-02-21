@@ -27,6 +27,7 @@ export async function GET() {
                 fullName: true,
                 profileImage: true,
                 location: true,
+                upiId: true,
               },
             },
             category: true,

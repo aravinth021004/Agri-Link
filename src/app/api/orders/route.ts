@@ -120,12 +120,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { deliveryAddress, notes } = result.data
-    const paymentId = body.paymentId // Mock payment ID
+    const { deliveryAddress, notes, paymentMethod, upiRefId } = result.data
 
-    if (!paymentId) {
+    if (paymentMethod === 'UPI' && (!upiRefId || !/^\d{12}$/.test(upiRefId))) {
       return NextResponse.json(
-        { error: 'Payment ID is required' },
+        { error: 'Valid UPI Reference ID (12 digits) is required for UPI payments' },
         { status: 400 }
       )
     }
@@ -195,7 +194,9 @@ export async function POST(request: NextRequest) {
             deliveryFee,
             totalAmount,
             deliveryAddress: deliveryAddress || undefined,
-            paymentId,
+            paymentMethod,
+            paymentStatus: 'PENDING',
+            upiRefId: paymentMethod === 'UPI' ? upiRefId : undefined,
             notes,
             items: {
               create: orderItems,

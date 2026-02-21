@@ -54,6 +54,17 @@ enum OrderStatus {
   DISPUTED
 }
 
+enum PaymentMethod {
+  UPI
+  COD
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  CONFIRMED
+}
+
 enum NotificationType {
   ORDER_UPDATE
   NEW_FOLLOWER
@@ -95,6 +106,7 @@ model User {
   phoneVerified Boolean    @default(false)
   totpSecret    String?
   totpEnabled   Boolean    @default(false)
+  upiId         String?
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 
@@ -295,9 +307,12 @@ model Order {
   totalAmount     Decimal     @db.Decimal(10, 2)
   deliveryAddress Json?
   pickupLocation  Json?
-  status          OrderStatus @default(PENDING)
-  paymentId       String
+  status          OrderStatus    @default(PENDING)
+  paymentMethod   PaymentMethod  @default(COD)
+  paymentStatus   PaymentStatus  @default(PENDING)
+  paymentId       String?
   razorpayOrderId String?
+  upiRefId        String?
   notes           String?
   deliveryProof   String?
   createdAt       DateTime    @default(now())

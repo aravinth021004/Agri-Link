@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowLeft, Package, MapPin, Phone, Star, Loader2, CheckCircle, Clock, Truck, XCircle, User } from 'lucide-react'
+import { ArrowLeft, Package, MapPin, Phone, Star, Loader2, CheckCircle, Clock, Truck, XCircle, User, CreditCard, Banknote, QrCode } from 'lucide-react'
 import { formatPrice, formatDate } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
@@ -21,6 +21,9 @@ interface OrderDetail {
   deliveryFee: number
   totalAmount: number
   deliveryOption: string
+  paymentMethod: string
+  paymentStatus: string
+  upiRefId: string | null
   deliveryAddress: {
     street: string
     city: string
@@ -89,6 +92,7 @@ export default function OrderDetailPage() {
     isOpen: false, newStatus: '', label: '',
   })
   const [isActionLoading, setIsActionLoading] = useState(false)
+  const [isConfirmingPayment, setIsConfirmingPayment] = useState(false)
   const t = useTranslations('orders')
 
   useEffect(() => {
@@ -157,6 +161,28 @@ export default function OrderDetailPage() {
       console.error('Failed to submit rating:', error)
     } finally {
       setIsSubmittingRating(false)
+    }
+  }
+
+  const confirmPayment = async () => {
+    if (!order) return
+    setIsConfirmingPayment(true)
+    try {
+      const res = await fetch(`/api/orders/${order.id}/confirm-payment`, {
+        method: 'POST',
+      })
+      if (res.ok) {
+        showToast(t('paymentConfirmedSuccess'), 'success')
+        fetchOrder()
+      } else {
+        const data = await res.json()
+        showToast(data.error || 'Failed to confirm payment', 'error')
+      }
+    } catch (error) {
+      console.error('Failed to confirm payment:', error)
+      showToast('Failed to confirm payment', 'error')
+    } finally {
+      setIsConfirmingPayment(false)
     }
   }
 
@@ -362,6 +388,56 @@ export default function OrderDetailPage() {
                   {contactPerson.phone}
                 </p>
               </div>
+            </div>
+          )}
+        </div>
+
+        {/* Payment Info */}
+        <div className="p-6 border-b border-gray-100">
+          <h2 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            {order.paymentMethod === 'UPI' ? <QrCode className="w-5 h-5 text-purple-600" /> : <Banknote className="w-5 h-5 text-green-600" />}
+            {t('paymentInfo')}
+          </h2>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-gray-600">{t('paymentMethodLabel')}</span>
+              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                order.paymentMethod === 'UPI' ? 'bg-purple-100 text-purple-700' : 'bg-green-100 text-green-700'
+              }`}>
+                {order.paymentMethod === 'UPI' ? t('upi') : t('cod')}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">{t('paymentStatusLabel')}</span>
+              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                order.paymentStatus === 'CONFIRMED' ? 'bg-green-100 text-green-700' :
+                order.paymentStatus === 'PAID' ? 'bg-blue-100 text-blue-700' :
+                'bg-yellow-100 text-yellow-700'
+              }`}>
+                {order.paymentStatus === 'CONFIRMED' ? t('paymentConfirmed') : 
+                 order.paymentStatus === 'PAID' ? t('paymentPaid') : t('paymentPending')}
+              </span>
+            </div>
+            {order.upiRefId && (
+              <div className="flex justify-between">
+                <span className="text-gray-600">{t('upiRefId')}</span>
+                <span className="font-mono text-gray-800">{order.upiRefId}</span>
+              </div>
+            )}
+          </div>
+          
+          {/* Farmer: Confirm Payment Button */}
+          {isFarmer && order.paymentMethod === 'UPI' && order.paymentStatus === 'PENDING' && (
+            <div className="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-200">
+              <p className="text-sm text-amber-700 mb-2">{t('confirmPaymentNote')}</p>
+              <Button
+                size="sm"
+                onClick={confirmPayment}
+                isLoading={isConfirmingPayment}
+              >
+                <CheckCircle className="w-4 h-4 mr-1" />
+                {t('confirmPayment')}
+              </Button>
             </div>
           )}
         </div>

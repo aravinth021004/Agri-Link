@@ -34,6 +34,7 @@ export async function GET(request: NextRequest) {
         status: true,
         emailVerified: true,
         phoneVerified: true,
+        upiId: true,
         createdAt: true,
         _count: {
           select: {
@@ -137,6 +138,7 @@ export async function PUT(request: NextRequest) {
         bio: true,
         location: true,
         language: true,
+        upiId: true,
       },
     })
 
