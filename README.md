@@ -21,6 +21,7 @@
 - 🔔 Real-time in-app notifications (orders, likes, comments, follows)
 - 📧 Email notifications (order confirmation, status updates, welcome)
 - 🌐 Multi-language support (English, Hindi, Tamil)
+- 💳 Pay via UPI (scan QR code) or Cash on Delivery
 
 ### For Farmers
 - 📊 Comprehensive dashboard with analytics
@@ -29,6 +30,8 @@
 - 📈 Sales tracking and earnings overview
 - 👥 Follower management
 - 🔔 Notifications for new orders, cancellations, likes, and follows
+- 💳 Set a UPI ID so customers can pay directly via QR code scan
+- ✅ Manually confirm UPI payments received from customers
 
 ### For Admins
 - 👤 User management (suspend, activate, role changes)
@@ -38,7 +41,7 @@
 ### Platform
 - 🔐 Route-level authentication and role-based authorization
 - 🛡️ Security headers on all API responses
-- 💳 Razorpay payment integration with webhook verification
+- 💳 Direct UPI payment (farmer UPI ID → QR code → customer pays → manual confirmation) and Cash on Delivery
 - ⏰ Automated subscription management via cron jobs
 - 📧 Email service (console mode for dev, Resend API for production)
 - 📱 PWA-ready with manifest.json
@@ -54,7 +57,7 @@
 | ORM | Prisma 5 |
 | Auth | NextAuth.js (JWT strategy) |
 | State | Zustand + React Query |
-| Payments | Razorpay |
+| Payments | UPI (direct) + Cash on Delivery |
 | Media | Cloudinary |
 | Email | Resend (prod) / Console (dev) |
 | i18n | next-intl (EN, HI, TA) |
@@ -66,7 +69,6 @@
 - PostgreSQL 15+
 - npm or yarn
 - Cloudinary account (for image uploads)
-- Razorpay account (for payments)
 
 ## 🛠️ Installation
 
@@ -121,8 +123,7 @@ agrilink/
 │   │   │   ├── interactions/ # Like, comment, follow, rate
 │   │   │   ├── messages/    # Direct messaging
 │   │   │   ├── notifications/ # In-app notifications
-│   │   │   ├── orders/      # Order CRUD + cancellation
-│   │   │   ├── payments/    # Razorpay create-order, verify, webhook
+│   │   │   ├── orders/      # Order CRUD, cancellation, UPI payment confirmation
 │   │   │   ├── products/    # Product CRUD
 │   │   │   ├── subscriptions/ # Plans, subscribe, status
 │   │   │   ├── upload/      # Cloudinary file uploads
@@ -168,11 +169,6 @@ CLOUDINARY_API_KEY=""
 CLOUDINARY_API_SECRET=""
 STORAGE_MODE="cloudinary"       # "local" or "cloudinary"
 
-# Razorpay (Payments)
-RAZORPAY_KEY_ID=""
-RAZORPAY_KEY_SECRET=""
-RAZORPAY_WEBHOOK_SECRET=""
-
 # Cron Jobs
 CRON_SECRET="generate-a-random-secret-for-cron"
 
@@ -202,9 +198,7 @@ NEXT_PUBLIC_APP_URL="http://localhost:3000"
 | `/api/cart/[itemId]` | PUT/DELETE | Update/remove cart item |
 | `/api/orders` | GET/POST | Order listing & creation + email |
 | `/api/orders/[id]` | GET/PUT | Order detail & status update (cancel) |
-| `/api/payments/create-order` | POST | Create Razorpay order |
-| `/api/payments/verify` | POST | Verify payment signature |
-| `/api/payments/webhook` | POST | Razorpay webhook (HMAC verified) |
+| `/api/orders/[id]/confirm-payment` | POST | Farmer confirms UPI payment received |
 | `/api/interactions/like` | POST | Like/unlike a product |
 | `/api/interactions/comment` | POST | Comment on a product |
 | `/api/interactions/follow` | POST | Follow/unfollow a farmer |
@@ -257,7 +251,6 @@ Change language in Settings → Language.
 
 - Route-level authentication via Next.js proxy (protected routes require login)
 - Role-based authorization (Customer, Farmer, Admin)
-- HMAC-SHA256 verification on Razorpay webhooks
 - Secure file upload validation (type, size limits)
 - Security headers on all API responses (X-Content-Type-Options, X-Frame-Options, etc.)
 - Bearer token protection on cron endpoints
@@ -296,7 +289,7 @@ This project is licensed under the MIT License.
 
 ## 👨‍💻 Author
 
-**Aravinth** - [GitHub](https://github.com/aravinth021004)
+**Aravinthkumar P** - [GitHub](https://github.com/aravinth021004)
 
 ---
 
