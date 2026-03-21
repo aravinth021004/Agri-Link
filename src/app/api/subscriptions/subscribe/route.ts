@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { planId, paymentId } = result.data
+    const { planId, upiRefId } = result.data
 
     // Find plan
     const plan = SUBSCRIPTION_PLANS.find(p => p.id === planId)
@@ -38,41 +38,43 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check for existing active subscription
+    // Check for existing active or pending subscription
     const existingSubscription = await prisma.subscription.findFirst({
       where: {
         userId: session.user.id,
-        status: 'ACTIVE',
-        endDate: {
-          gt: new Date(),
-        },
+        OR: [
+          {
+            status: 'ACTIVE',
+            endDate: {
+              gt: new Date(),
+            },
+          },
+          {
+            status: 'PENDING',
+          },
+        ],
       },
     })
 
-    // Calculate dates
-    const startDate = existingSubscription 
-      ? new Date(existingSubscription.endDate) 
-      : new Date()
-    const endDate = new Date(startDate)
-    endDate.setDate(endDate.getDate() + plan.duration)
+    if (existingSubscription) {
+      return NextResponse.json(
+        { error: 'You already have an active or pending subscription' },
+        { status: 409 }
+      )
+    }
 
-    // Create subscription
+    const paymentId = `upi_ref_${upiRefId}`
+
+    // Create a pending subscription for admin verification.
     const subscription = await prisma.subscription.create({
       data: {
         userId: session.user.id,
         planId,
-        startDate,
-        endDate,
         amount: plan.price,
         paymentId,
-        status: 'ACTIVE',
+        upiRefId,
+        status: 'PENDING',
       },
-    })
-
-    // Upgrade user to FARMER role if not already
-    await prisma.user.update({
-      where: { id: session.user.id },
-      data: { role: 'FARMER' },
     })
 
     // Log subscription (development mode)
@@ -80,15 +82,13 @@ export async function POST(request: NextRequest) {
     console.log(`🌾 New Subscription:`)
     console.log(`  User: ${session.user.fullName}`)
     console.log(`  Plan: ${plan.name}`)
-    console.log(`  Expires: ${endDate.toLocaleDateString()}`)
+    console.log(`  Status: PENDING_APPROVAL`)
+    console.log(`  UPI Ref: ${upiRefId}`)
     console.log('='.repeat(50))
 
     return NextResponse.json({
-      message: 'Subscription activated',
+      message: 'Subscription request submitted. Awaiting admin approval.',
       subscription,
-      user: {
-        role: 'FARMER',
-      },
     }, { status: 201 })
   } catch (error) {
     console.error('Subscribe error:', error)

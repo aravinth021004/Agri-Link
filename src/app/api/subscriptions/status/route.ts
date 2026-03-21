@@ -18,12 +18,19 @@ export async function GET() {
     const subscription = await prisma.subscription.findFirst({
       where: {
         userId: session.user.id,
-        status: 'ACTIVE',
-        endDate: {
-          gt: new Date(),
-        },
+        OR: [
+          {
+            status: 'ACTIVE',
+            endDate: {
+              gt: new Date(),
+            },
+          },
+          {
+            status: 'PENDING',
+          },
+        ],
       },
-      orderBy: { endDate: 'desc' },
+      orderBy: { createdAt: 'desc' },
     })
 
     if (!subscription) {
@@ -34,12 +41,13 @@ export async function GET() {
       })
     }
 
-    const daysRemaining = Math.ceil(
-      (new Date(subscription.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-    )
+    const daysRemaining = subscription.endDate
+      ? Math.ceil((new Date(subscription.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+      : 0
 
     return NextResponse.json({
-      isActive: true,
+      isActive: subscription.status === 'ACTIVE',
+      isPending: subscription.status === 'PENDING',
       subscription,
       daysRemaining,
       expiresAt: subscription.endDate,

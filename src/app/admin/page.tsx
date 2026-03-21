@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation'
 import { Users, ShoppingBag, TrendingUp, Package, Crown, Loader2, Search, ChevronUp, ChevronDown } from 'lucide-react'
 import { formatPrice, formatDate } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { ApprovalsTab } from '@/components/admin/approvals-tab'
+import { SettingsTab } from '@/components/admin/settings-tab'
 
 interface User {
   id: string
@@ -42,7 +44,7 @@ export default function AdminPage() {
   const [users, setUsers] = useState<User[]>([])
   const [analytics, setAnalytics] = useState<Analytics | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'overview' | 'users'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'approvals' | 'settings'>('overview')
   const [searchQuery, setSearchQuery] = useState('')
   const [roleFilter, setRoleFilter] = useState('')
   const [totalUsers, setTotalUsers] = useState(0)
@@ -145,7 +147,7 @@ export default function AdminPage() {
 
       {/* Tabs */}
       <div className="flex gap-2 mb-6">
-        {(['overview', 'users'] as const).map((tab) => (
+        {(['overview', 'users', 'approvals', 'settings'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -320,6 +322,16 @@ export default function AdminPage() {
             Showing {users.length} of {totalUsers} users
           </div>
         </div>
+      )}
+
+      {/* Approvals Tab */}
+      {activeTab === 'approvals' && (
+        <ApprovalsTab />
+      )}
+
+      {/* Settings Tab */}
+      {activeTab === 'settings' && (
+        <SettingsTab />
       )}
     </div>
   )

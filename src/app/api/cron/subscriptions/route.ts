@@ -89,6 +89,7 @@ export async function POST(request: NextRequest) {
     })
 
     for (const sub of expiringSubscriptions) {
+      if (!sub.endDate) continue
       const daysLeft = Math.ceil((sub.endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
       createNotification({
         userId: sub.userId,

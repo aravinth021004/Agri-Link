@@ -26,6 +26,7 @@ enum UserStatus {
 }
 
 enum SubStatus {
+  PENDING
   ACTIVE
   EXPIRED
   CANCELLED
@@ -153,17 +154,26 @@ model Subscription {
   id            String    @id @default(uuid())
   userId        String
   planId        String
-  startDate     DateTime
-  endDate       DateTime
-  status        SubStatus @default(ACTIVE)
+  startDate     DateTime?
+  endDate       DateTime?
+  status        SubStatus @default(PENDING)
   amount        Decimal   @db.Decimal(10, 2)
   paymentId     String
+  upiRefId      String?
   razorpaySubId String?
   createdAt     DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("subscriptions")
+}
+
+model PlatformSettings {
+  id      Int    @id @default(1)
+  upiId   String
+  upiName String
+
+  @@map("platform_settings")
 }
 
 model Category {

@@ -119,7 +119,7 @@ export const profileSchema = z.object({
 // Subscription schema
 export const subscribeSchema = z.object({
   planId: z.string(),
-  paymentId: z.string(),
+  upiRefId: z.string().regex(/^\d{12}$/, 'UPI Reference ID must be 12 digits'),
 })
 
 // Types
