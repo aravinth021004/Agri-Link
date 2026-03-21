@@ -4,6 +4,7 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 import { Navbar } from "@/components/navbar";
 import { BottomNav } from "@/components/bottom-nav";
+import { ChatbotWidget } from "@/components/chatbot-widget";
 import { IntlClientProvider } from "@/components/intl-provider";
 import { getLocale, getMessages } from "next-intl/server";
 
@@ -41,6 +42,7 @@ export default async function RootLayout({
                 {children}
               </main>
               <BottomNav />
+              <ChatbotWidget />
             </div>
           </Providers>
         </IntlClientProvider>
