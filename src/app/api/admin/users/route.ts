@@ -143,6 +143,22 @@ export async function PUT(request: NextRequest) {
       },
     })
 
+    // If the user's role is being downgraded to CUSTOMER, cancel their active or pending subscriptions
+    // so they are not blocked from buying a new subscription in the future.
+    if (role === 'CUSTOMER') {
+      await prisma.subscription.updateMany({
+        where: {
+          userId: userId,
+          status: {
+            in: ['ACTIVE', 'PENDING'],
+          },
+        },
+        data: {
+          status: 'CANCELLED',
+        },
+      })
+    }
+
     console.log(`👤 Admin ${session.user.fullName} updated user ${user.fullName}: ${JSON.stringify(updateData)}`)
 
     return NextResponse.json(user)
