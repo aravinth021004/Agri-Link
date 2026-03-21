@@ -76,7 +76,12 @@
         "resetPassword": "Reset Password",
         "sendResetLink": "Send Reset Link",
         "backToLogin": "Back to Login",
-        "otpPlaceholder": "Enter 6-digit code"
+        "otpPlaceholder": "Enter 6-digit code",
+        "forgotPasswordTitle": "Reset your password",
+        "forgotPasswordSubtitle": "Enter your email address and we'll send you an OTP to reset your password",
+        "newPassword": "New Password",
+        "setNewPassword": "Set New Password",
+        "resetSuccess": "Password reset successfully. You can now log in."
     },
     "home": {
         "heroTitle": "Fresh from Farm to Your Table",
