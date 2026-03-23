@@ -12,6 +12,53 @@ interface Message {
 
 const CHATBOT_API_URL = process.env.NEXT_PUBLIC_CHATBOT_API_URL || 'http://localhost:8000'
 
+const formatMessage = (content: string) => {
+  if (!content) return null
+
+  const parts = content.split(/(\*\*.*?\*\*)/g)
+
+  return (
+    <span className="break-words">
+      {parts.map((part, index) => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+          return (
+            <strong key={index} className="font-semibold">
+              {part.slice(2, -2)}
+            </strong>
+          )
+        }
+
+        const segments = part.split(/(\n\* |\s\* )/g)
+
+        return (
+          <span key={index}>
+            {segments.map((segment, sIndex) => {
+              if (segment === '\n* ' || segment === ' * ') {
+                return (
+                  <span key={sIndex}>
+                    <br />
+                    <span className="mr-2 font-bold">•</span>
+                  </span>
+                )
+              }
+              return (
+                <span key={sIndex}>
+                  {segment.split('\n').map((line, lIndex) => (
+                    <span key={`${sIndex}-${lIndex}`}>
+                      {lIndex > 0 && <br />}
+                      {line}
+                    </span>
+                  ))}
+                </span>
+              )
+            })}
+          </span>
+        )
+      })}
+    </span>
+  )
+}
+
 export function ChatbotWidget() {
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([
@@ -197,7 +244,7 @@ export function ChatbotWidget() {
                       : 'bg-white text-gray-800 shadow-sm border border-gray-100 rounded-bl-md'
                   }`}
                 >
-                  {message.content || (
+                  {message.content ? formatMessage(message.content) : (
                     <span className="flex items-center gap-1 text-gray-400">
                       <Loader2 className="w-3 h-3 animate-spin" />
                       Thinking...
