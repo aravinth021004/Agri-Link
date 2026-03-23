@@ -1,11 +1,16 @@
 import Link from 'next/link'
 import { ArrowRight, Leaf, Users, TrendingUp, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useTranslations } from 'next-intl'
+import { getTranslations } from 'next-intl/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 
-export default function HomePage() {
-  const t = useTranslations('home')
-  const tFooter = useTranslations('footer')
+export default async function HomePage() {
+  const session = await getServerSession(authOptions)
+  const becomeFarmerLink = session ? '/subscription' : '/signup'
+  
+  const t = await getTranslations('home')
+  const tFooter = await getTranslations('footer')
 
   return (
     <div className="min-h-screen">
@@ -27,7 +32,7 @@ export default function HomePage() {
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               </Link>
-              <Link href="/signup">
+              <Link href={becomeFarmerLink}>
                 <Button size="lg" variant="outline" className="w-full sm:w-auto">
                   {t('becomeFarmer')}
                 </Button>
