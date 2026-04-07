@@ -65,6 +65,8 @@
         "forgotPassword": "Forgot Password?",
         "noAccount": "Don't have an account?",
         "hasAccount": "Already have an account?",
+        "continueWithGoogle": "Continue with Google",
+        "orContinueWithGoogle": "Or continue with Google",
         "otpTitle": "Verify OTP",
         "otpSent": "We've sent a code to",
         "resendOtp": "Resend OTP",
@@ -242,7 +244,8 @@
         "continueShopping": "Continue Shopping",
         "ordersCreated": "{count} orders have been created (one per farmer).",
         "orderSentToFarmer": "Your order has been sent to the farmer.",
-        "fillAddress": "Please fill in your delivery address"
+        "fillAddress": "Please fill in your delivery address",
+        "phoneRequiredForOrder": "Please add your phone number in profile before placing an order"
     },
     "orders": {
         "title": "My Orders",
@@ -300,12 +303,16 @@
         "upiRefId": "UPI Reference ID",
         "confirmPaymentNote": "Please verify that you received the UPI payment (check the reference ID in your UPI app) before confirming.",
         "confirmPayment": "Confirm Payment Received",
-        "paymentConfirmedSuccess": "Payment confirmed successfully"
+        "paymentConfirmedSuccess": "Payment confirmed successfully",
+        "phoneNotAvailable": "Phone not available"
     },
     "profile": {
         "title": "Profile",
         "editProfile": "Edit Profile",
         "myProfile": "My Profile",
+        "phoneNumber": "Phone Number",
+        "phoneMissing": "Phone number not added",
+        "phoneRequiredHint": "Add your phone number to place orders",
         "bio": "Bio",
         "location": "Location",
         "products": "Products",

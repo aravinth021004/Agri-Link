@@ -94,8 +94,8 @@ enum ReportStatus {
 model User {
   id            String     @id @default(uuid())
   email         String     @unique
-  phone         String     @unique
-  passwordHash  String
+  phone         String?    @unique
+  passwordHash  String?
   fullName      String
   role          Role       @default(CUSTOMER)
   profileImage  String?

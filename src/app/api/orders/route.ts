@@ -122,6 +122,18 @@ export async function POST(request: NextRequest) {
 
     const { deliveryAddress, notes, paymentMethod, upiRefId } = result.data
 
+    const currentUser = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { phone: true },
+    })
+
+    if (!currentUser?.phone) {
+      return NextResponse.json(
+        { error: 'Phone number is required before placing an order. Please update your profile.' },
+        { status: 400 }
+      )
+    }
+
     if (paymentMethod === 'UPI' && (!upiRefId || !/^\d{12}$/.test(upiRefId))) {
       return NextResponse.json(
         { error: 'Valid UPI Reference ID (12 digits) is required for UPI payments' },

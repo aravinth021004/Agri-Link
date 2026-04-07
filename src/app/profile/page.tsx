@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input'
 interface UserProfile {
   id: string
   email: string
-  phone: string
+  phone: string | null
   fullName: string
   role: string
   profileImage: string | null
@@ -42,6 +42,7 @@ export default function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false)
   const [editData, setEditData] = useState({
     fullName: '',
+    phone: '',
     bio: '',
     location: '',
   })
@@ -54,6 +55,7 @@ export default function ProfilePage() {
       setAverageRating(data.averageRating)
       setEditData({
         fullName: data.user.fullName,
+        phone: data.user.phone || '',
         bio: data.user.bio || '',
         location: data.user.location || '',
       })
@@ -75,10 +77,17 @@ export default function ProfilePage() {
   const handleSave = async () => {
     setIsSaving(true)
     try {
+      const payload = {
+        fullName: editData.fullName,
+        bio: editData.bio,
+        location: editData.location,
+        ...(editData.phone.trim() ? { phone: editData.phone.trim() } : {}),
+      }
+
       const response = await fetch('/api/users/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editData),
+        body: JSON.stringify(payload),
       })
       if (response.ok) {
         fetchProfile()
@@ -223,7 +232,21 @@ export default function ProfilePage() {
             </div>
             <div className="flex items-center gap-3 text-gray-600">
               <Phone className="w-5 h-5 text-gray-400" />
-              <span>{profile.phone}</span>
+              {isEditing ? (
+                <Input
+                  value={editData.phone}
+                  onChange={(e) => setEditData({ ...editData, phone: e.target.value })}
+                  placeholder={t('phoneNumber')}
+                  className="flex-1"
+                />
+              ) : (
+                <div>
+                  <span>{profile.phone || t('phoneMissing')}</span>
+                  {!profile.phone && (
+                    <p className="text-xs text-amber-600">{t('phoneRequiredHint')}</p>
+                  )}
+                </div>
+              )}
             </div>
             <div className="flex items-center gap-3 text-gray-600">
               <MapPin className="w-5 h-5 text-gray-400" />

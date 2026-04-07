@@ -3,7 +3,7 @@ import { create } from 'zustand'
 interface User {
   id: string
   email: string
-  phone: string
+  phone: string | null
   fullName: string
   role: 'CUSTOMER' | 'FARMER' | 'ADMIN'
   profileImage?: string | null

@@ -39,14 +39,14 @@ interface OrderDetail {
   farmer: {
     id: string
     fullName: string
-    phone: string
+    phone: string | null
     profileImage: string | null
     location?: string | null
   }
   customer: {
     id: string
     fullName: string
-    phone: string
+    phone: string | null
     profileImage: string | null
     email?: string | null
   }
@@ -366,7 +366,7 @@ export default function OrderDetailPage() {
                 <p className="font-medium text-gray-900">{contactPerson.name}</p>
                 <p className="text-sm text-gray-500 flex items-center gap-1">
                   <Phone className="w-3 h-3" />
-                  {contactPerson.phone}
+                  {contactPerson.phone || t('phoneNotAvailable')}
                 </p>
               </div>
             </Link>
@@ -385,7 +385,7 @@ export default function OrderDetailPage() {
                 <p className="font-medium text-gray-900">{contactPerson.name}</p>
                 <p className="text-sm text-gray-500 flex items-center gap-1">
                   <Phone className="w-3 h-3" />
-                  {contactPerson.phone}
+                  {contactPerson.phone || t('phoneNotAvailable')}
                 </p>
               </div>
             </div>

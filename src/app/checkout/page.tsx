@@ -102,6 +102,12 @@ export default function CheckoutPage() {
   const allFarmersHaveUpi = cartGroups.every(g => g.farmer.upiId)
 
   const handlePlaceOrder = async () => {
+    if (!session?.user?.phone) {
+      showToast(t('phoneRequiredForOrder'), 'warning')
+      router.push('/profile')
+      return
+    }
+
     const hasHomeDelivery = cartGroups.some(g => 
       g.items.some(i => i.deliveryOption === 'HOME_DELIVERY')
     )

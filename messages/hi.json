@@ -65,6 +65,8 @@
         "forgotPassword": "पासवर्ड भूल गए?",
         "noAccount": "खाता नहीं है?",
         "hasAccount": "पहले से खाता है?",
+        "continueWithGoogle": "Google के साथ जारी रखें",
+        "orContinueWithGoogle": "या Google के साथ जारी रखें",
         "otpTitle": "OTP सत्यापित करें",
         "otpSent": "हमने कोड भेजा है",
         "resendOtp": "OTP पुनः भेजें",
@@ -242,7 +244,8 @@
         "continueShopping": "खरीदारी जारी रखें",
         "ordersCreated": "{count} ऑर्डर बनाए गए (प्रति किसान एक)।",
         "orderSentToFarmer": "आपका ऑर्डर किसान को भेज दिया गया है।",
-        "fillAddress": "कृपया अपना डिलीवरी पता भरें"
+        "fillAddress": "कृपया अपना डिलीवरी पता भरें",
+        "phoneRequiredForOrder": "ऑर्डर देने से पहले प्रोफ़ाइल में अपना फ़ोन नंबर जोड़ें"
     },
     "orders": {
         "title": "मेरे ऑर्डर",
@@ -300,12 +303,16 @@
         "upiRefId": "UPI संदर्भ ID",
         "confirmPaymentNote": "कृपया पुष्टि करने से पहले जांचें कि UPI भुगतान प्राप्त हुआ है (अपने UPI ऐप में संदर्भ ID जांचें)।",
         "confirmPayment": "भुगतान प्राप्ति पुष्टि करें",
-        "paymentConfirmedSuccess": "भुगतान सफलतापूर्वक पुष्टि किया गया"
+        "paymentConfirmedSuccess": "भुगतान सफलतापूर्वक पुष्टि किया गया",
+        "phoneNotAvailable": "फ़ोन उपलब्ध नहीं है"
     },
     "profile": {
         "title": "प्रोफ़ाइल",
         "editProfile": "प्रोफ़ाइल संपादित करें",
         "myProfile": "मेरी प्रोफ़ाइल",
+        "phoneNumber": "फ़ोन नंबर",
+        "phoneMissing": "फ़ोन नंबर जोड़ा नहीं गया",
+        "phoneRequiredHint": "ऑर्डर देने के लिए अपना फ़ोन नंबर जोड़ें",
         "bio": "परिचय",
         "location": "स्थान",
         "products": "उत्पाद",

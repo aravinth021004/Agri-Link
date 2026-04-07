@@ -1,5 +1,6 @@
 import { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
+import GoogleProvider from 'next-auth/providers/google'
 import bcrypt from 'bcryptjs'
 import prisma from './prisma'
 import { verifyTotpCode } from './totp'
@@ -8,7 +9,7 @@ declare module 'next-auth' {
   interface User {
     id: string
     email: string
-    phone: string
+    phone: string | null
     fullName: string
     role: 'CUSTOMER' | 'FARMER' | 'ADMIN'
     profileImage?: string | null
@@ -23,80 +24,158 @@ declare module 'next-auth/jwt' {
   interface JWT {
     id: string
     email: string
-    phone: string
+    phone: string | null
     fullName: string
     role: 'CUSTOMER' | 'FARMER' | 'ADMIN'
     profileImage?: string | null
   }
 }
 
-export const authOptions: NextAuthOptions = {
-  providers: [
-    CredentialsProvider({
-      name: 'credentials',
-      credentials: {
-        emailOrPhone: { label: 'Email or Phone', type: 'text' },
-        password: { label: 'Password', type: 'password' },
-        totpCode: { label: 'Authenticator Code', type: 'text' },
-      },
-      async authorize(credentials) {
-        if (!credentials?.emailOrPhone || !credentials?.password) {
-          throw new Error('Email/Phone and password are required')
+const providers: NextAuthOptions['providers'] = [
+  CredentialsProvider({
+    name: 'credentials',
+    credentials: {
+      emailOrPhone: { label: 'Email or Phone', type: 'text' },
+      password: { label: 'Password', type: 'password' },
+      totpCode: { label: 'Authenticator Code', type: 'text' },
+    },
+    async authorize(credentials) {
+      if (!credentials?.emailOrPhone || !credentials?.password) {
+        throw new Error('Email/Phone and password are required')
+      }
+
+      const { emailOrPhone, password, totpCode } = credentials
+
+      // Find user by email or phone
+      const user = await prisma.user.findFirst({
+        where: {
+          OR: [
+            { email: emailOrPhone },
+            { phone: emailOrPhone },
+          ],
+          status: 'ACTIVE',
+        },
+      })
+
+      if (!user || !user.passwordHash) {
+        throw new Error('Invalid credentials')
+      }
+
+      const isPasswordValid = await bcrypt.compare(password, user.passwordHash)
+
+      if (!isPasswordValid) {
+        throw new Error('Invalid credentials')
+      }
+
+      // TOTP verification for users with 2FA enabled
+      if (user.totpEnabled && user.totpSecret) {
+        if (!totpCode) {
+          throw new Error('TOTP_REQUIRED')
         }
+        if (!verifyTotpCode(user.totpSecret, totpCode)) {
+          throw new Error('TOTP_INVALID')
+        }
+      }
 
-        const { emailOrPhone, password, totpCode } = credentials
+      return {
+        id: user.id,
+        email: user.email,
+        phone: user.phone,
+        fullName: user.fullName,
+        role: user.role,
+        profileImage: user.profileImage,
+      }
+    },
+  }),
+]
 
-        // Find user by email or phone
-        const user = await prisma.user.findFirst({
-          where: {
-            OR: [
-              { email: emailOrPhone },
-              { phone: emailOrPhone },
-            ],
+if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+  providers.push(
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    })
+  )
+}
+
+export const authOptions: NextAuthOptions = {
+  providers,
+  callbacks: {
+    async signIn({ user, account }) {
+      if (account?.provider !== 'google') {
+        return true
+      }
+
+      if (!user.email) {
+        return false
+      }
+
+      const existingUser = await prisma.user.findUnique({
+        where: { email: user.email },
+        select: { id: true, status: true },
+      })
+
+      if (existingUser) {
+        return existingUser.status === 'ACTIVE'
+      }
+
+      try {
+        await prisma.user.create({
+          data: {
+            email: user.email,
+            fullName: user.name?.trim() || user.email.split('@')[0],
+            profileImage: user.image,
+            emailVerified: true,
+            role: 'CUSTOMER',
             status: 'ACTIVE',
           },
         })
+      } catch {
+        // Another concurrent sign-in can create the same user by email.
+        const createdUser = await prisma.user.findUnique({
+          where: { email: user.email },
+          select: { id: true, status: true },
+        })
 
-        if (!user) {
-          throw new Error('Invalid credentials')
+        if (!createdUser || createdUser.status !== 'ACTIVE') {
+          return false
         }
+      }
 
-        const isPasswordValid = await bcrypt.compare(password, user.passwordHash)
-
-        if (!isPasswordValid) {
-          throw new Error('Invalid credentials')
-        }
-
-        // TOTP verification for users with 2FA enabled
-        if (user.totpEnabled && user.totpSecret) {
-          if (!totpCode) {
-            throw new Error('TOTP_REQUIRED')
-          }
-          if (!verifyTotpCode(user.totpSecret, totpCode)) {
-            throw new Error('TOTP_INVALID')
-          }
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          phone: user.phone,
-          fullName: user.fullName,
-          role: user.role,
-          profileImage: user.profileImage,
-        }
-      },
-    }),
-  ],
-  callbacks: {
-    async jwt({ token, user, trigger, session }) {
-      if (user) {
+      return true
+    },
+    async jwt({ token, user, account, trigger, session }) {
+      if (user && account?.provider === 'credentials') {
         token.id = user.id
         token.email = user.email
         token.phone = user.phone
         token.fullName = user.fullName
         token.role = user.role
         token.profileImage = user.profileImage
+      }
+
+      if ((account?.provider === 'google' || !token.id) && token.email) {
+        const dbUser = await prisma.user.findUnique({
+          where: { email: token.email },
+          select: {
+            id: true,
+            email: true,
+            phone: true,
+            fullName: true,
+            role: true,
+            profileImage: true,
+            status: true,
+          },
+        })
+
+        if (dbUser?.status === 'ACTIVE') {
+          token.id = dbUser.id
+          token.email = dbUser.email
+          token.phone = dbUser.phone
+          token.fullName = dbUser.fullName
+          token.role = dbUser.role
+          token.profileImage = dbUser.profileImage
+        }
       }
 
       // Handle session update (e.g., after role change)
@@ -112,7 +191,7 @@ export const authOptions: NextAuthOptions = {
       session.user = {
         id: token.id,
         email: token.email,
-        phone: token.phone,
+        phone: token.phone || null,
         fullName: token.fullName,
         role: token.role,
         profileImage: token.profileImage,

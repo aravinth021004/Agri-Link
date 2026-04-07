@@ -110,6 +110,7 @@ export const messageSchema = z.object({
 // Profile schema
 export const profileSchema = z.object({
   fullName: z.string().min(2).max(100).optional(),
+  phone: z.string().regex(/^(\+91)?[6-9]\d{9}$/, 'Invalid phone number').optional(),
   bio: z.string().max(300).optional(),
   location: z.string().max(100).optional(),
   language: z.enum(['en', 'hi', 'ta']).optional(),

@@ -120,6 +120,27 @@ export async function PUT(request: NextRequest) {
 
     const updateData: Record<string, unknown> = { ...result.data }
 
+    if (typeof result.data.phone === 'string') {
+      const normalizedPhone = result.data.phone.trim()
+
+      const existingUserWithPhone = await prisma.user.findFirst({
+        where: {
+          phone: normalizedPhone,
+          NOT: { id: session.user.id },
+        },
+        select: { id: true },
+      })
+
+      if (existingUserWithPhone) {
+        return NextResponse.json(
+          { error: 'Phone number already in use' },
+          { status: 409 }
+        )
+      }
+
+      updateData.phone = normalizedPhone
+    }
+
     // Handle profile image update
     if (body.profileImage) {
       updateData.profileImage = body.profileImage

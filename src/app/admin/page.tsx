@@ -12,7 +12,7 @@ import { SettingsTab } from '@/components/admin/settings-tab'
 interface User {
   id: string
   email: string
-  phone: string
+  phone: string | null
   fullName: string
   role: string
   status: string

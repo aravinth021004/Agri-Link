@@ -162,6 +162,8 @@ DIRECT_URL="postgresql://user:password@host:5432/agrilink"
 NEXTAUTH_URL="http://localhost:3000"
 NEXTAUTH_SECRET="generate-a-random-secret"
 JWT_SECRET="generate-a-different-secret"
+GOOGLE_CLIENT_ID=""
+GOOGLE_CLIENT_SECRET=""
 
 # Cloudinary (Media Uploads)
 CLOUDINARY_CLOUD_NAME=""

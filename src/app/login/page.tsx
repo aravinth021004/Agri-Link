@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { signIn } from 'next-auth/react'
+import { getProviders, signIn } from 'next-auth/react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -27,6 +27,8 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
+  const [hasGoogleProvider, setHasGoogleProvider] = useState(false)
   const [step, setStep] = useState<'credentials' | 'totp'>('credentials')
   const [savedCredentials, setSavedCredentials] = useState<LoginForm | null>(null)
   const [totpCode, setTotpCode] = useState('')
@@ -34,6 +36,15 @@ export default function LoginPage() {
   const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
   })
+
+  useEffect(() => {
+    const checkProviders = async () => {
+      const providers = await getProviders()
+      setHasGoogleProvider(Boolean(providers?.google))
+    }
+
+    checkProviders()
+  }, [])
 
   const attemptLogin = async (emailOrPhone: string, password: string, totp?: string) => {
     const result = await signIn('credentials', {
@@ -99,6 +110,17 @@ export default function LoginPage() {
       setError(tErrors('somethingWrong'))
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleGoogleSignIn = async () => {
+    setError('')
+    setIsGoogleLoading(true)
+
+    try {
+      await signIn('google', { callbackUrl: '/feed' })
+    } finally {
+      setIsGoogleLoading(false)
     }
   }
 
@@ -209,6 +231,32 @@ export default function LoginPage() {
             <Button type="submit" className="w-full" size="lg" isLoading={isLoading}>
               {isLoading ? t('signingIn') : t('loginTitle')}
             </Button>
+
+            {hasGoogleProvider && (
+              <>
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-gray-200" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-white px-2 text-gray-500">{t('orContinueWithGoogle')}</span>
+                  </div>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  onClick={handleGoogleSignIn}
+                  isLoading={isGoogleLoading}
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4">
+                    <path fill="#EA4335" d="M12 10.2v3.9h5.4c-.2 1.3-1.6 3.9-5.4 3.9-3.2 0-5.9-2.7-5.9-6s2.7-6 5.9-6c1.8 0 3 .8 3.7 1.5l2.5-2.4C16.7 3.7 14.6 3 12 3 7 3 3 7 3 12s4 9 9 9c5.2 0 8.6-3.6 8.6-8.8 0-.6-.1-1.2-.2-2H12z"/>
+                  </svg>
+                  {t('continueWithGoogle')}
+                </Button>
+              </>
+            )}
           </form>
 
           <div className="mt-6 text-center">
